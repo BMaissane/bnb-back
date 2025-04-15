@@ -2,6 +2,7 @@ import express from 'express';
 import { prisma } from './prisma/client'; 
 import reservationsRouter from './routes/reservations';
 import helmet from 'helmet';
+import 'reflect-metadata';
 
 const app = express();
 const port = 3000;
