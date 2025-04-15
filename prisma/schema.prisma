@@ -8,12 +8,26 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum ItemCategory {
+  STARTER
+  MAIN
+  DESSERT
+  SIDE
+  DRINK
+  // Ou en minuscules, mais être consistant
+}
+
+enum UserType {
+  CLIENT
+  RESTAURANT_OWNER
+}
+
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model item {
   id                   Int                    @id @default(autoincrement())
   name                 String                 @db.VarChar(100)
   description          String?
-  category             String?                @db.VarChar(20)
+  category             ItemCategory           
   base_price           Decimal                @db.Decimal(10, 2)
   reservation_has_item reservation_has_item[]
   restaurant_has_item  restaurant_has_item[]
@@ -77,15 +91,17 @@ model restaurant {
   id                  Int                   @id @default(autoincrement())
   owner_id            Int
   name                String                @db.VarChar(100)
-  address             String                @db.VarChar(255)
+  address             String?               @db.VarChar(255)
   opening_hours       String?
-  genre               String?               @db.VarChar(100)
+  genre               String?               @db.VarChar(50)
   siret               String                @unique @db.VarChar(14)
-  description         String?
-  image_url           String?               @db.VarChar(255)
+  description         String?               @db.VarChar(50)
+  image_url           String                @default("https://example.com/placeholder.jpg") @db.VarChar(255)
   is_active           Boolean?              @default(true)
   created_at          DateTime?             @default(now()) @db.Timestamptz(6)
   updated_at          DateTime?             @default(now()) @db.Timestamptz(6)
+  
+  // Relations
   menu                menu[]
   message             message[]
   reservation         reservation[]
@@ -100,7 +116,7 @@ model restaurant_has_item {
   restaurant_id Int
   item_id       Int
   current_price Decimal    @db.Decimal(10, 2)
-  stock         Int?       @default(0)
+  stock         Int       @default(0)
   is_available  Boolean?   @default(true)
   item          item       @relation(fields: [item_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "restaurant_item_item_id_fkey")
   restaurant    restaurant @relation(fields: [restaurant_id], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "restaurant_item_restaurant_id_fkey")
@@ -126,7 +142,7 @@ model timeslot {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model user {
   id            Int           @id @default(autoincrement())
-  type_user     String        @db.VarChar(20)
+  type_user     UserType      
   first_name    String        @db.VarChar(100)
   last_name     String        @db.VarChar(50)
   email         String        @unique @db.VarChar(255)
