@@ -1,21 +1,23 @@
 import express from 'express';
-import { prisma } from './prisma/client'; // Chevalier relatif correct
+import { prisma } from './prisma/client'; 
 import reservationsRouter from './routes/reservations';
+import helmet from 'helmet';
 
 const app = express();
 const port = 3000;
 
-// Middleware pour fermer Prisma proprement
+// Middleware Prisma 
 app.use((req, res, next) => {
   res.on('finish', () => {
-    prisma.$disconnect().catch(console.error); // Déconnexion après chaque requête
+    prisma.$disconnect().catch(console.error); 
   });
   next();
 });
 
 // Routes
 app.use(express.json());
-app.use('/reservations', reservationsRouter);
+app.use(helmet());
+app.use('/api/reservations', reservationsRouter);
 
 app.get('/', (req, res) => {
   res.send('Hello World!');

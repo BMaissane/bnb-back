@@ -1,10 +1,6 @@
 import app from './app';
-import http from 'http';
 
-const port = process.env.PORT || 3000;
-
-const server = http.createServer(app);
-
-server.listen(port, () => {
-  console.log(`Server is running on http://localhost:${port}`); // Note les backticks ``
+const PORT = 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
 });

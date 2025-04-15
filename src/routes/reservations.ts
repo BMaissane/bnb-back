@@ -3,28 +3,13 @@ import { prisma } from '../prisma/client';
 
 const router = Router();
 
-// CREATE
-router.post('/', async (req, res) => {
+// Route TEST simple
+router.get('/test', async (req, res) => {
   try {
-    const reservation = await prisma.reservation.create({
-      data: {
-        user_id: req.body.user_id,
-        timeslot_id: req.body.timeslot_id,
-        restaurant_id: req.body.restaurant_id, // Champ requis
-        status: 'CONFIRMED'
-      }
-    });
-    res.json(reservation);
+    res.json({ message: "Ça marche !" });
   } catch (error) {
-    console.error(error);
-    res.status(400).json({ error: "Données invalides" });
+    res.status(500).json({ error: "Erreur serveur" });
   }
-});
-
-// READ ALL
-router.get('/', async (req, res) => {
-  const reservations = await prisma.reservation.findMany();
-  res.json(reservations);
 });
 
 export default router;
