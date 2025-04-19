@@ -15,7 +15,6 @@ enum ItemCategory {
   DESSERT
   SIDE
   DRINK
-  // Ou en minuscules, mais être consistant
 }
 
 enum UserType {
@@ -29,12 +28,12 @@ enum TimeslotStatus {
   UNAVAILABLE
 }
 
-/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model item {
   id                   Int                    @id @default(autoincrement())
   name                 String                 @db.VarChar(100)
   description          String?
-  category             ItemCategory
+  category             ItemCategory          // Type :  STARTER, MAIN, DESSERT, SIDE, DRINK
   base_price           Decimal                @db.Decimal(10, 2)
   reservation_has_item reservation_has_item[]
   restaurant_has_item  restaurant_has_item[]
@@ -152,7 +151,7 @@ model timeslot {
   start_at      DateTime      @db.Time(6)
   end_at        DateTime      @db.Time(6)
   capacity      Int
-  status        TimeslotStatus
+  status        TimeslotStatus // (AVAILABLE, BOOKED, UNAVAILABLE)
   created_at    DateTime?     @default(now()) @db.Timestamptz(6)
   updated_at    DateTime?     @default(now()) @db.Timestamptz(6)
   reservation   reservation[]
@@ -162,7 +161,7 @@ model timeslot {
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model user {
   id            Int           @id @default(autoincrement())
-  type_user     UserType
+  type_user     UserType      // Type: CLIENT or RESTAURANT_OWNER
   first_name    String        @db.VarChar(100)
   last_name     String        @db.VarChar(50)
   email         String        @unique @db.VarChar(255)
