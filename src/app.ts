@@ -1,6 +1,6 @@
 import express from 'express';
 import { prisma } from './prisma/client'; 
-import reservationsRouter from './routes/reservations';
+import reservationsRouter from './routes/reservation';
 import helmet from 'helmet';
 import 'reflect-metadata';
 

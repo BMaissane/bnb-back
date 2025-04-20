@@ -27,7 +27,8 @@ async function main() {
             date: new Date('2025-07-15'),
             start_at: new Date('1970-01-01T19:00:00Z'),  // Time via Date
             end_at: new Date('1970-01-01T23:00:00Z'),
-            capacity: 20
+            capacity: 20,
+            status: "AVAILABLE",
           }
         ]
       },
