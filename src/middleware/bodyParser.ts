@@ -1,13 +1,14 @@
-import { json, urlencoded, OptionsJson, OptionsUrlencoded } from 'express';
+import { json, urlencoded } from 'express';
+import type { OptionsJson, OptionsUrlencoded } from 'body-parser'; // Import depuis body-parser
 
 // Configuration typée pour body-parser
 const jsonOptions: OptionsJson = {
-  limit: '10mb' // Augmente la limite pour les payloads JSON
+  limit: '10mb'
 };
 
 const urlencodedOptions: OptionsUrlencoded = {
   extended: true,
-  parameterLimit: 10000 // Augmente le nombre de paramètres acceptés
+  parameterLimit: 10000
 };
 
 export const jsonParser = json(jsonOptions);
