@@ -1,7 +1,11 @@
-const express = require('express')
-const app = express()
+import express from 'express';
+import * as MessageController from '../controller/messageController';
+import { authenticate } from '../middleware/auth'; // À implémenter
 
-// respond with "hello world" when a GET request is made to the homepage
-app.get('/', (req: any, res: { send: (arg0: string) => void }) => {
-  res.send('hello world')
-})
+const router = express.Router();
+
+router.post('/', authenticate, MessageController.create);
+router.get('/:userId', authenticate, MessageController.getAll);
+router.delete('/:id', authenticate, MessageController.delete);
+
+export default router;
