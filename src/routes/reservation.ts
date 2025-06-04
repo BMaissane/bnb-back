@@ -46,7 +46,7 @@ router.post('/', async (req, res) => {
                 user_id: userId,
                 timeslot_id: timeslotId,
                 restaurant_id: restaurantId,
-                status: "confirmed"
+                status: "CONFIRMED"
             },
             include: {
                 timeslot: true
