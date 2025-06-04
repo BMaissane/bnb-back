@@ -5,7 +5,7 @@ import helmet from 'helmet';
 import 'reflect-metadata';
 import { jsonParser, urlencodedParser } from './middleware/bodyParser';
 import { corsMiddleware } from './middleware/cors';
-import { authenticate, authorize } from './middleware/auth';
+import { authenticate, authorize } from './middleware/authMiddleware';
 import { errorHandler } from './middleware/errorHandler';
 
 const app = express();

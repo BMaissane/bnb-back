@@ -1,6 +1,6 @@
 import express from 'express';
 import * as MessageController from '../controller/messageController';
-import { authenticate } from '../middleware/auth'; // À implémenter
+import { authenticate } from '../middleware/authMiddleware'; // À implémenter
 
 const router = express.Router();
 
