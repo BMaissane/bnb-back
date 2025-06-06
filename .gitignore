@@ -1,0 +1,11 @@
+# Fichiers d'environnement
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+
+# Fichiers système
+.DS_Store
+node_modules/
+dist/

@@ -14,10 +14,10 @@ export const registerUser = async (req: Request, res: Response) => {
   try {
     const { email, password, name, isRestaurateur } = req.body;
 
-    // 1. Vérification JWT_SECRET
-    if (!process.env.JWT_SECRET) {
-      throw new Error('Configuration serveur invalide');
-    }
+    // Verification secret key JWT
+   if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+  throw new Error('JWT_SECRET invalide ou trop court');
+}
 
     // 2. Vérification email existant optimisée
     const existingUser = await prisma.user.findUnique({

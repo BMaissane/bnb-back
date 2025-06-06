@@ -8,6 +8,7 @@ import { corsMiddleware } from './middleware/cors';
 import { authenticate, authorize } from './middleware/authMiddleware';
 import { errorHandler } from './middleware/errorHandler';
 import authRouter from './routes/auth'; 
+import testRoutes from './routes/testRoutes';
 
 const app = express();
 const port = 3000;
@@ -36,6 +37,7 @@ app.use(express.json());
 app.use(helmet());
 app.use('/api/reservations', reservationsRouter);
 app.use('/api/auth', authRouter); 
+app.use('/api/test', testRoutes);
 
 app.use(errorHandler);
 
