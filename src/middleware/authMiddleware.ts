@@ -3,14 +3,6 @@ import jwt from 'jsonwebtoken';
 import { prisma } from '../prisma/client';
 import { UserType } from '@prisma/client';
 
-declare module 'express' {
-  interface Request {
-    user?: {
-      id: number;
-      type_user: UserType; // Changement de 'role' vers 'type_user' pour cohérence
-    };
-  }
-}
 
 export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
   const authHeader = req.headers.authorization;
@@ -22,23 +14,14 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
   const token = authHeader.split(' ')[1];
   
   try {
-    // 1. Vérification du token avec le bon payload
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { 
-      id: number; 
-      type_user: UserType 
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) throw new Error('Token missing');
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      id: number;
+      type_user: UserType;
     };
 
-    // 2. Vérification de l'utilisateur en base (optionnel mais recommandé)
-    const userExists = await prisma.user.findUnique({
-      where: { id: decoded.id },
-      select: { id: true, type_user: true }
-    });
-
-    if (!userExists) {
-      return res.status(401).json({ message: 'Utilisateur non autorisé' });
-    }
-
-    // 3. Assignation des données utilisateur
     req.user = {
       id: decoded.id,
       type_user: decoded.type_user
@@ -46,7 +29,7 @@ export const authenticate = async (req: Request, res: Response, next: NextFuncti
 
     next();
   } catch (error) {
-    // Gestion améliorée des erreurs
+    // Gestion des erreurs
     if (error instanceof jwt.TokenExpiredError) {
       return res.status(401).json({ message: 'Session expirée', code: 'TOKEN_EXPIRED' });
     }

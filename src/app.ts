@@ -7,6 +7,7 @@ import { jsonParser, urlencodedParser } from './middleware/bodyParser';
 import { corsMiddleware } from './middleware/cors';
 import { authenticate, authorize } from './middleware/authMiddleware';
 import { errorHandler } from './middleware/errorHandler';
+import authRouter from './routes/auth'; 
 
 const app = express();
 const port = 3000;
@@ -28,6 +29,7 @@ app.use(urlencodedParser);
 app.use(express.json());
 app.use(helmet());
 app.use('/api/reservations', reservationsRouter);
+app.use('/api/auth', authRouter); 
 
 app.use(errorHandler);
 

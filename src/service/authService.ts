@@ -30,11 +30,11 @@ export class AuthService {
     return user;
   }
 
-  static generateToken(user: { id: number; type_user: UserType }) {
-    return jwt.sign(
-      { id: user.id, type_user: user.type_user },
-      process.env.JWT_SECRET as string,
-      { expiresIn: '24h' }
-    );
-  }
+static generateToken(user: { id: number; type_user: UserType }) {
+  return jwt.sign(
+    { id: user.id, type_user: user.type_user }, 
+    process.env.JWT_SECRET as string,
+    { expiresIn: '24h' }
+  );
+}
 }

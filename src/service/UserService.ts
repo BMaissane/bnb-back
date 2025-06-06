@@ -1,6 +1,6 @@
 // user.service.ts
 import { CreateUserDto } from '../interface/dto/userDto';
-import { hashPassword } from '../utils/auth';
+import { hashPassword } from '../utils/authUtils';
 import { prisma } from '../prisma/client';
 
 export class UserService {

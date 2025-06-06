@@ -7,7 +7,7 @@ import { UserType } from '@prisma/client';
 interface TokenPayload {
   id: number;
   email: string;
-  type_user: 'CLIENT' | 'RESTAURANT_OWNER';
+  type_user: UserType; 
 }
 
 export const registerUser = async (req: Request, res: Response) => {

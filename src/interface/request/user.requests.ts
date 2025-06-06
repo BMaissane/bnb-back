@@ -1,22 +1,34 @@
-// src/interface/requests/user.request.ts
 import { UserType } from '@prisma/client';
 
+// Déclaration globale Express (à garder UNIQUEMENT ici)
 declare global {
   namespace Express {
     interface Request {
       user?: {
         id: number;
-        type_user: UserType;
+        type_user: UserType; // Utilisez toujours type_user pour la cohérence
       };
     }
   }
 }
 
-// Vos interfaces existantes...
+// Interfaces DTO
 export interface CreateUserRequest {
   firstName: string;
   lastName: string;
   email: string;
   password: string;
-  role?: UserType; 
+  type_user?: UserType; 
+}
+
+export interface LoginRequest {
+  email: string;
+  password: string;
+}
+
+export interface RegisterRequest {
+  email: string;
+  password: string;
+  name: string;
+  isRestaurateur: boolean;
 }
