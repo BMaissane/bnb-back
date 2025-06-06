@@ -14,53 +14,54 @@ export const registerUser = async (req: Request, res: Response) => {
   try {
     const { email, password, name, isRestaurateur } = req.body;
 
-    // Vérification pour savoir si l'utilisateur existe déja dans la BDD via son email
-    const existingUser = await prisma.user.findUnique({ where: { email } });
-    if (existingUser) {
-      return res.status(400).json({ message: 'Email déjà utilisé' });
+    // 1. Vérification JWT_SECRET
+    if (!process.env.JWT_SECRET) {
+      throw new Error('Configuration serveur invalide');
     }
 
-    // Hashing du mot de pass
-    const hashedPassword = await bcrypt.hash(password, 12);
-
-    // Logique métier différente celon type d'ulisateur
-    const userType = isRestaurateur ? UserType.RESTAURANT_OWNER : UserType.CLIENT;
-
-    // Structure différente selon le type d'utilisateur
-    const userData = isRestaurateur
-      ? {
-          email,
-          password_hash: hashedPassword,
-          first_name: name, // Nom du restaurant = name//first_name
-          last_name: "", // Vide pour les restaurants
-          type_user: userType 
-        }
-      : {
-          email,
-          password_hash: hashedPassword,
-          first_name: name.split(' ')[0], // Prénom
-          last_name: name.split(' ').slice(1).join(' ') || "", // Nom de famille
-          type_user: userType 
-        };
-
-    const user = await prisma.user.create({
-      data: userData
+    // 2. Vérification email existant optimisée
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+      select: { id: true }
     });
 
+    if (existingUser) {
+      return res.status(409).json({
+        message: 'Email déjà utilisé',
+        code: 'EMAIL_EXISTS'
+      });
+    }
+
+    // 3. Création utilisateur
+    const user = await prisma.user.create({
+      data: {
+        email,
+        password_hash: await bcrypt.hash(password, 12),
+        first_name: name,
+        last_name: "",
+        type_user: isRestaurateur ? 'RESTAURANT_OWNER' : 'CLIENT'
+      }
+    });
+
+    // 4. Génération token sécurisée
     const token = jwt.sign(
-      { id: user.id, email: user.email, type_user: user.type_user },
-      process.env.JWT_SECRET as string,
-      { expiresIn: '24h', algorithm: 'HS256' }
+      { id: user.id, type_user: user.type_user },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
     );
 
-    res.status(201).json({ 
-      token, 
+    return res.status(201).json({
+      token,
       userId: user.id,
-      userType: user.type_user 
+      userType: user.type_user
     });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Erreur lors de la création du compte' });
+    console.error('Erreur registration:', error);
+    return res.status(500).json({
+      message: 'Erreur serveur',
+      code: 'SERVER_ERROR'
+    });
   }
 };
 
