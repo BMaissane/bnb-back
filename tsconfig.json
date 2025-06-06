@@ -6,20 +6,17 @@
     "rootDir": "./src",
     "strict": true,
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "typeRoots": ["./src/@types", "./node_modules/@types"],
+    "types": ["express"],
+    "paths": {
+      "@prisma/client": ["./node_modules/@prisma/client"]
+    }
   },
   "ts-node": {
     "esm": false,
     "experimentalSpecifierResolution": "node"
   },
-  "paths": {
-    "@prisma/client": ["./node_modules/@prisma/client"]
-  },
-    "typeRoots": [
-      "./src/types", 
-      "./node_modules/@types"
-    ],
-  "types" : ["express"],
   "include": ["src/**/*"],
   "exclude": ["node_modules"]
 }
