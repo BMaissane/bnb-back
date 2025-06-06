@@ -69,25 +69,47 @@ export const loginUser = async (req: Request, res: Response) => {
   try {
     const { email, password } = req.body;
 
-    const user = await prisma.user.findUnique({ where: { email } });
+    // Debug: Afficher les valeurs reçues
+    console.log('Tentative de login avec:', { email, password });
+
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: { 
+        id: true,
+        email: true,
+        password_hash: true,
+        type_user: true 
+      }
+    });
+
     if (!user) {
-      return res.status(401).json({ message: 'Email ou mot de passe incorrect' });
+      console.log('Utilisateur non trouvé pour email:', email);
+      return res.status(401).json({ message: 'Identifiants incorrects' });
     }
 
-    const isValid = await bcrypt.compare(password, user.password_hash);
-    if (!isValid) {
-      return res.status(401).json({ message: 'Email ou mot de passe incorrect' });
+    // Debug: Comparaison mot de passe
+    const isMatch = await bcrypt.compare(password, user.password_hash);
+    console.log('Résultat comparaison mdp:', isMatch);
+
+    if (!isMatch) {
+      return res.status(401).json({ message: 'Identifiants incorrects' });
+    }
+
+    // Vérification JWT_SECRET
+    if (!process.env.JWT_SECRET) {
+      throw new Error('JWT_SECRET manquant');
     }
 
     const token = jwt.sign(
-      { id: user.id, email: user.email, type_user: user.type_user } as TokenPayload,
-      process.env.JWT_SECRET as string,
-      { expiresIn: '24h', algorithm: 'HS256' }
+      { id: user.id, type_user: user.type_user },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
     );
 
     res.json({ token, userId: user.id });
+
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Erreur lors de la connexion' });
+    console.error('Erreur login:', error);
+    res.status(500).json({ message: 'Erreur serveur' });
   }
 };
