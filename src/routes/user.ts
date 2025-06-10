@@ -16,17 +16,16 @@ router.post('/', createUser);
 // GET /users/:id - Récupération profil (authentifié)
 router.get('/:id', authenticate, getUserById);
 
-// PATCH /users/:id - Modification (authentifié + propriétaire ou admin)
-router.patch('/:id', 
+// PUT/UPDATE /users/:id - Modification (authentifié + propriétaire ou admin)
+router.put('/:id', 
   authenticate,
   authorize([UserType.CLIENT, UserType.RESTAURANT_OWNER]),
   updateUser
 );
 
-// DELETE /users/:id - Suppression (admin seulement)
+// DELETE /users/:id - Suppression & confirmation via mot de passe
 router.delete('/:id',
   authenticate,
-  authorize([UserType.RESTAURANT_OWNER]),
   deleteUser
 );
 

@@ -1,9 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
-import { prisma } from '../prisma/client';
 import { UserType } from '@prisma/client';
-
-
 
 export const authenticate = async (
   req: Request,
@@ -18,7 +15,6 @@ export const authenticate = async (
       id: number;
       type_user: UserType;
     };
-
 
     req.user = {
       id: decoded.id,

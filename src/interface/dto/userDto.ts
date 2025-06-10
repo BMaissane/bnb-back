@@ -18,6 +18,11 @@ export const UpdateUserSchema = z.object({
   phoneNumber: z.string().regex(/^\+?[0-9\s]+$/).optional()
 });
 
+export const DeleteUserSchema = z.object({
+  password: z.string().min(8) // Pour confirmation par mot de passe
+});
+
+export type DeleteUserDto = z.infer<typeof DeleteUserSchema>;
 // Types TypeScript dérivés
 export type CreateUserDto = z.infer<typeof CreateUserSchema>;
 export type UpdateUserDto = z.infer<typeof UpdateUserSchema>;

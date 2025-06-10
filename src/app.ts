@@ -9,6 +9,7 @@ import { authenticate, authorize } from './middleware/authMiddleware';
 import { errorHandler } from './middleware/errorHandler';
 import authRouter from './routes/auth'; 
 import testRoutes from './routes/testRoutes';
+import userRouter from './routes/user'
 
 const app = express();
 const port = 3000;
@@ -37,12 +38,17 @@ app.use(express.json());
 app.use(helmet());
 app.use('/api/reservations', reservationsRouter);
 app.use('/api/auth', authRouter); 
+app.use('/users', userRouter);
 app.use('/api/test', testRoutes);
 
 app.use(errorHandler);
 
 app.get('/', (req, res) => {
   res.send('Hello World!');
-});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+});});
 
 export default app;

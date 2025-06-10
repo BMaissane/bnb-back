@@ -24,6 +24,13 @@ export const comparePasswords = async (
   return bcrypt.compare(password, hashedPassword);
 };
 
+export async function verifyPassword(
+  plainPassword: string,
+  hash: string
+): Promise<boolean> {
+  return await bcrypt.compare(plainPassword, hash);
+}
+
 /**
  * Génère un JWT token
  */
