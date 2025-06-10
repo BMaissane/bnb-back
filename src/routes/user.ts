@@ -3,7 +3,7 @@ import { authenticate, authorize } from '../middleware/authMiddleware';
 import { UserType } from '@prisma/client';
 import {
   createUser,
-  getUser,
+  getUserById,
   updateUser,
   deleteUser
 } from '../controller/userController';
@@ -14,7 +14,7 @@ const router = Router();
 router.post('/', createUser);
 
 // GET /users/:id - Récupération profil (authentifié)
-router.get('/:id', authenticate, getUser);
+router.get('/:id', authenticate, getUserById);
 
 // PATCH /users/:id - Modification (authentifié + propriétaire ou admin)
 router.patch('/:id', 

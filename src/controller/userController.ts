@@ -12,7 +12,7 @@ export const createUser = async (req: Request, res: Response) => {
   }
 };
 
-export const getUser = async (req: Request, res: Response) => {
+export const getUserById = async (req: Request, res: Response) => {
   try {
     const user = await UserService.getUserById(parseInt(req.params.id));
     if (!user) return res.status(404).json({ error: 'User not found' });
@@ -42,4 +42,3 @@ export const updateUser = async (req: Request, res: Response) => {
     }
   };
 
-// ... (updateUser, deleteUser similaires)
