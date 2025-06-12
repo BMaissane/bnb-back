@@ -64,58 +64,52 @@ export const getUserById = async (req: Request, res: Response) => {
 // };
 
 
-
+// PATCH /api/users/:id
 export const updateUser = async (req: Request, res: Response) => {
   try {
+    console.log('Données reçues:', req.body); // Log du body entrant
     const userId = parseInt(req.params.id);
-    const updateData: UpdateUserDto = req.body;
+    const updateData = req.body;
 
-    // 1. Vérification que l'utilisateur existe
-    const existingUser = await UserService.getUserById(userId);
-    if (!existingUser) {
-      return res.status(404).json({ error: 'User not found' });
-    }
+    // Conversion camelCase → snake_case pour Prisma
+    const prismaData = {
+      phone_number: updateData.phoneNumber || updateData.phone_number,
+      // Ajoutez d'autres champs si nécessaire
+    };
 
-    // 2. Autorisation : seul l'utilisateur peut modifier son profil
-    if (req.user?.id !== userId) {
-      return res.status(403).json({ error: 'Unauthorized - You can only update your own profile' });
-    }
+    console.log('Données transformées pour Prisma:', prismaData); // Log des données transformées
 
-    // 3. Mise à jour effective
-    const updatedUser = await UserService.updateUser(userId, updateData);
+    const updatedUser = await prisma.user.update({
+      where: { id: userId },
+      data: prismaData,
+      select: { id: true, email: true, phone_number: true }
+    });
+
+    console.log('Résultat de la mise à jour:', updatedUser); // Log du résultat
     res.json(updatedUser);
-
   } catch (error) {
-    console.error('Update error:', error);
-    res.status(500).json({ error: 'Server error during update' });
+    console.error('Erreur complète:', error);
+    res.status(500).json({ error: 'Échec de la mise à jour' });
   }
 };
 
+// DELETE /api/users/:id
 export const deleteUser = async (req: Request, res: Response) => {
   try {
     const userId = parseInt(req.params.id);
-    const { password }: DeleteUserDto = req.body;
+    console.log('Tentative de suppression user ID:', userId);
 
-    // Vérifier que l'utilisateur est bien propriétaire du compte
-    if (req.user?.id !== userId) {
-      return res.status(403).json({ error: 'Unauthorized' });
-    }
-
-    // Récupérer l'utilisateur pour vérifier le mot de passe
-    const user = await UserService.getUserByIdWithPassword(userId);
+    // Vérification de l'existence de l'utilisateur
+    const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    // Vérifier le mot de passe
-    const isPasswordValid = await verifyPassword(password, user.password_hash);
-    if (!isPasswordValid) {
-      return res.status(401).json({ error: 'Invalid password' });
-    }
-
-    // Supprimer l'utilisateur
-    await UserService.deleteUser(userId);
+    // Suppression effective
+    await prisma.user.delete({ where: { id: userId } });
+    console.log('Utilisateur supprimé avec succès');
     res.status(204).send();
   } catch (error) {
-    res.status(500).json({ error: 'Server error' });
+    console.error('Erreur de suppression:', error);
+    res.status(500).json({ error: 'Échec de la suppression' });
   }
 };
 

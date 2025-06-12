@@ -1,8 +1,7 @@
 // user.service.ts
-import { CreateUserDto } from '../interface/dto/userDto';
+import { CreateUserDto, UpdateUserDto, UpdateUserSchema } from '../interface/dto/userDto';
 import { hashPassword } from '../utils/authUtils';
 import { prisma } from '../prisma/client';
-import UpdateUserSchema from '../dto/userDto'
 
 export class UserService {
   static async createUser(dto: CreateUserDto) {
@@ -64,19 +63,19 @@ static async getUserById(id: number) {
   });
 }
 
-static async updateUser(id: number, dto: UpdateUserSchema) {
+static async updateUser(id: number, dto: UpdateUserDto) {
   return prisma.user.update({
     where: { id },
     data: {
-      first_name: dto.firstName, // Conversion camelCase -> snake_case
-      last_name: dto.lastName,
+      first_name: dto.firstName, 
+      last_name: dto.lastName,   
       phone_number: dto.phoneNumber
     },
-    select: {
+    select: { 
       id: true,
       email: true,
       first_name: true,
-      last_name: true,
+      last_name: true,          
       type_user: true
     }
   });

@@ -8,17 +8,18 @@ import authRouter from './routes/auth';
 import userRouter from './routes/user';
 import reservationsRouter from './routes/reservation';
 import testRoutes from './routes/testRoutes';
+import { urlencodedParser } from './middleware/bodyParser';
 
 const app = express();
 const port = process.env.PORT || 3000;
 
-// 1. Middlewares de sécurité FIRST
+// 1. Middlewares de sécurité 
 app.use(helmet());
 app.use(corsMiddleware);
 
-// 2. Body parsing (un seul parseur JSON)
-app.use(express.json()); // <-- Supprimez jsonParser et urlencodedParser
-app.use(express.urlencoded({ extended: true }));
+// 2. Body parsing 
+app.use(express.json()); 
+app.use(urlencodedParser);
 
 // 3. Logging des requêtes
 app.use((req, res, next) => {
@@ -27,7 +28,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// 4. Gestion des connexions Prisma
+// 4. Prisma middleware
 app.use((req, res, next) => {
   res.on('finish', () => {
     prisma.$disconnect().catch(console.error);
@@ -35,7 +36,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// 5. Routes avec préfixe /api
+// 5. Routes 
 app.use('/api/auth', authRouter);
 app.use('/api/users', userRouter); // <-- Changé de /users à /api/users
 app.use('/api/reservations', reservationsRouter);
