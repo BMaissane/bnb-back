@@ -68,26 +68,31 @@ export const getUserById = async (req: Request, res: Response) => {
 export const updateUser = async (req: Request, res: Response) => {
   try {
     const userId = parseInt(req.params.id);
-    const { phoneNumber, lastName } = req.body as UpdateUserDto; // Cast explicite
+    const dto: UpdateUserDto = req.body; // Utilisation directe du DTO
+
+    // Conversion camelCase → snake_case
+    const prismaData = {
+      phone_number: dto.phoneNumber,
+      last_name: dto.lastName // Maintenant reconnu via le DTO
+    };
+
+    console.log('Données transformées:', prismaData);
 
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: {
-        phone_number: phoneNumber,
-        last_name: lastName
-      },
-      select: {
+      data: prismaData,
+      select: { 
         id: true,
         email: true,
         first_name: true,
         last_name: true,
-        phone_number: true
+        phone_number: true 
       }
     });
 
     res.json(updatedUser);
   } catch (error) {
-    console.error('Erreur complète:', error);
+    console.error('Erreur:', error);
     res.status(500).json({ error: 'Échec de la mise à jour' });
   }
 };
