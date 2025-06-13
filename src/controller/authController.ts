@@ -3,6 +3,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../prisma/client';
 import { UserType } from '@prisma/client';
+import { generateResetToken, generateToken, hashPassword } from '../utils/authUtils';
+import { sendMockEmail } from '../utils/mockEmail'; 
 
 interface TokenPayload {
   id: number;
@@ -112,4 +114,54 @@ export const loginUser = async (req: Request, res: Response) => {
     console.error('Erreur login:', error);
     res.status(500).json({ message: 'Erreur serveur' });
   }
+};
+
+// Fonction pour "mot de passe oublié"
+export const forgotPassword = async (req: Request, res: Response) => {
+  const { email } = req.body;
+
+  // 1. Vérifier que l'utilisateur existe
+  const user = await prisma.user.findUnique({ where: { email } });
+  if (!user) {
+    return res.status(404).json({ error: "Aucun utilisateur trouvé avec cet email" });
+  }
+
+  // 2. Générer un token temporaire (ex: valable 1h)
+  const resetToken = generateResetToken(user.id); 
+  
+  // 3. Stocker le token en base (ou cache)
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { resetToken }
+  });
+
+  // 4. Envoyer un email (mock en développement)
+  const resetLink = `http://localhost:3000/reset-password?token=${resetToken}`;
+  sendMockEmail(email, `Lien de réinitialisation : ${resetLink}`);
+
+  res.json({ message: "Lien de réinitialisation envoyé (vérifiez les logs)" });
+};
+
+// Fonction pour réinitialiser le mot de passe
+export const resetPassword = async (req: Request, res: Response) => {
+  const { token, newPassword } = req.body;
+
+  // 1. Vérifier le token
+  const user = await prisma.user.findFirst({ 
+    where: { resetToken: token }
+  });
+  if (!user) {
+    return res.status(400).json({ error: "Token invalide ou expiré" });
+  }
+
+  // 2. Mettre à jour le mot de passe
+  await prisma.user.update({
+    where: { id: user.id },
+    data: { 
+      password_hash: await hashPassword(newPassword),
+      resetToken: null // Invalider le token après usage
+    }
+  });
+
+  res.json({ message: "Mot de passe réinitialisé avec succès" });
 };

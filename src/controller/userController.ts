@@ -99,17 +99,39 @@ export const deleteUser = async (req: Request, res: Response) => {
     const userId = parseInt(req.params.id);
     console.log('Tentative de suppression user ID:', userId);
 
-    // Vérification de l'existence de l'utilisateur
-    const user = await prisma.user.findUnique({ where: { id: userId } });
-    if (!user) return res.status(404).json({ error: 'User not found' });
+    // 1. Vérifier que l'utilisateur existe
+    const user = await prisma.user.findUnique({ 
+      where: { id: userId },
+      include: { restaurant: true } // Important pour les RESTAURANT_OWNER
+    });
 
-    // Suppression effective
-    await prisma.user.delete({ where: { id: userId } });
-    console.log('Utilisateur supprimé avec succès');
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // 2. Vérifier les contraintes (si owner d'un restaurant)
+    if (user.type_user === 'RESTAURANT_OWNER' && user.restaurant) {
+      return res.status(400).json({ 
+        error: 'Cannot delete restaurant owner with active restaurant' 
+      });
+    }
+
+    // 3. Suppression effective
+    console.log('Exécution de la suppression...');
+    await prisma.user.delete({ 
+      where: { id: userId },
+      include: { restaurant: true } // Pour le debug
+    });
+
+    console.log('Suppression réussie');
     res.status(204).send();
+
   } catch (error) {
-    console.error('Erreur de suppression:', error);
-    res.status(500).json({ error: 'Échec de la suppression' });
+    console.error('Erreur complète:', error);
+    res.status(500).json({ 
+      error: 'Delete failed',
+      details: error instanceof Error ? error.message : String(error)
+    });
   }
 };
 

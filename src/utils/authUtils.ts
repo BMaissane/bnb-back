@@ -31,9 +31,7 @@ export async function verifyPassword(
   return await bcrypt.compare(plainPassword, hash);
 }
 
-/**
- * Génère un JWT token
- */
+// JWT Pour l'authentification standard (login)
 export const generateToken = (userId: number, type: UserType): string => {
   return jwt.sign(
     { userId, type },
@@ -42,9 +40,11 @@ export const generateToken = (userId: number, type: UserType): string => {
   );
 };
 
-/**
- * Vérifie et décode un token JWT
- */
-export const verifyToken = (token: string): { userId: number; type: UserType } => {
-  return jwt.verify(token, JWT_SECRET) as { userId: number; type: UserType };
+// JWT Pour la réinitialisation de mot de passe
+export const generateResetToken = (userId: number): string => {
+  return jwt.sign(
+    { userId }, // Pas besoin du type ici
+    JWT_SECRET, 
+    { expiresIn: '1h' } // Durée courte
+  );
 };
