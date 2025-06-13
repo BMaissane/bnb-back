@@ -64,28 +64,27 @@ export const getUserById = async (req: Request, res: Response) => {
 // };
 
 
-// PATCH /api/users/:id
+// PUT /api/users/:id
 export const updateUser = async (req: Request, res: Response) => {
   try {
-    console.log('Données reçues:', req.body); // Log du body entrant
     const userId = parseInt(req.params.id);
-    const updateData = req.body;
-
-    // Conversion camelCase → snake_case pour Prisma
-    const prismaData = {
-      phone_number: updateData.phoneNumber || updateData.phone_number,
-      // Ajoutez d'autres champs si nécessaire
-    };
-
-    console.log('Données transformées pour Prisma:', prismaData); // Log des données transformées
+    const { phoneNumber, lastName } = req.body as UpdateUserDto; // Cast explicite
 
     const updatedUser = await prisma.user.update({
       where: { id: userId },
-      data: prismaData,
-      select: { id: true, email: true, phone_number: true }
+      data: {
+        phone_number: phoneNumber,
+        last_name: lastName
+      },
+      select: {
+        id: true,
+        email: true,
+        first_name: true,
+        last_name: true,
+        phone_number: true
+      }
     });
 
-    console.log('Résultat de la mise à jour:', updatedUser); // Log du résultat
     res.json(updatedUser);
   } catch (error) {
     console.error('Erreur complète:', error);
@@ -97,6 +96,7 @@ export const updateUser = async (req: Request, res: Response) => {
 export const deleteUser = async (req: Request, res: Response) => {
   try {
     const userId = parseInt(req.params.id);
+    const { password }: DeleteUserDto = req.body; 
     console.log('Tentative de suppression user ID:', userId);
 
     // 1. Vérifier que l'utilisateur existe

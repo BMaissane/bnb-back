@@ -13,10 +13,10 @@ export const CreateUserSchema = z.object({
   });
 
 export const UpdateUserSchema = z.object({
-  firstName: z.string().min(2).optional(), // Bien en camelCase
-  lastName: z.string().min(2).optional(),  // Doit matcher le nom dans le body
+  firstName: z.string().min(2).optional(),
+  lastName: z.string().min(2).optional(),
   phoneNumber: z.string().regex(/^\+?[0-9\s]+$/).optional()
-});
+}).strict(); // .strict() empêche les champs non déclarés
 
 export const DeleteUserSchema = z.object({
   password: z.string().min(8) // Pour confirmation par mot de passe
