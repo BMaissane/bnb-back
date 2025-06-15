@@ -71,15 +71,13 @@ async getAllRestaurants() {
     });
   },
 
-  async deleteRestaurant(id: number) {
-    return prisma.restaurant.update({
-      where: { id },
-      data: {
-        is_active: false,
-        updated_at: new Date()
-      }
-    });
-  },
+  // (soft-delete)
+async deleteRestaurant(id: number) {
+  console.log(`Suppression du restaurant ${id}`);
+  return prisma.restaurant.delete({
+    where: { id },
+  });
+},
 
   async searchRestaurants(query: string) {
     return prisma.restaurant.findMany({

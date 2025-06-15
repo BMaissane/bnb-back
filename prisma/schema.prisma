@@ -1,6 +1,6 @@
 generator client {
   provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/client" 
+  output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
@@ -33,13 +33,12 @@ enum ReservationStatus {
   CANCELED
 }
 
-
 // This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model item {
   id                   Int                    @id @default(autoincrement())
   name                 String                 @db.VarChar(100)
   description          String?
-  category             ItemCategory          // Type :  STARTER, MAIN, DESSERT, SIDE, DRINK
+  category             ItemCategory // Type :  STARTER, MAIN, DESSERT, SIDE, DRINK
   base_price           Decimal                @db.Decimal(10, 2)
   reservation_has_item reservation_has_item[]
   restaurant_has_item  restaurant_has_item[]
@@ -113,14 +112,14 @@ model reservation_has_item {
 }
 
 model restaurant {
-  id            Int       @id @default(autoincrement()) @unique
-  owner_id      Int       @unique
+  id            Int       @id @unique @default(autoincrement())
+  owner_id      Int
   name          String    @db.VarChar(100)
   address       String?   @db.VarChar(255)
   opening_hours String?
   genre         String?   @db.VarChar(50)
   siret         String    @unique @db.VarChar(14)
-  description   String?   @db.VarChar(50)
+  description   String?   @db.VarChar(255)
   image_url     String    @default("https://example.com/placeholder.jpg") @db.VarChar(255)
   is_active     Boolean?  @default(true)
   created_at    DateTime? @default(now()) @db.Timestamptz(6)
@@ -132,7 +131,7 @@ model restaurant {
   reservation         reservation[]
   restaurant_has_item restaurant_has_item[]
   timeslot            timeslot[]
-  owner               user    @relation("owner_restaurant", fields: [owner_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  owner               user                  @relation("owner_restaurant", fields: [owner_id], references: [id])
 
   @@index([owner_id], map: "idx_restaurant_owner")
 }
@@ -151,25 +150,25 @@ model restaurant_has_item {
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model timeslot {
-  id            Int           @id @default(autoincrement())
+  id            Int            @id @default(autoincrement())
   restaurant_id Int
-  date          DateTime      @db.Date
-  start_at      DateTime      @db.Time(6)
-  end_at        DateTime      @db.Time(6)
+  date          DateTime       @db.Date
+  start_at      DateTime       @db.Time(6)
+  end_at        DateTime       @db.Time(6)
   capacity      Int
   status        TimeslotStatus // (AVAILABLE, BOOKED, UNAVAILABLE)
-  created_at    DateTime?     @default(now()) @db.Timestamptz(6)
-  updated_at    DateTime?     @default(now()) @db.Timestamptz(6)
+  created_at    DateTime?      @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime?      @default(now()) @db.Timestamptz(6)
   reservation   reservation[]
-  restaurant    restaurant    @relation(fields: [restaurant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  restaurant    restaurant     @relation(fields: [restaurant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model user {
   id            Int           @id @default(autoincrement())
-  type_user     UserType      // Type: CLIENT or RESTAURANT_OWNER
+  type_user     UserType // Type: CLIENT or RESTAURANT_OWNER
   first_name    String        @db.VarChar(100)
-  last_name     String?        @db.VarChar(50)
+  last_name     String?       @db.VarChar(50)
   email         String        @unique @db.VarChar(255)
   phone_number  String?       @db.VarChar(20)
   password_hash String        @db.VarChar(100)
@@ -178,5 +177,5 @@ model user {
   updated_at    DateTime?     @default(now()) @db.Timestamptz(6)
   message       message[]
   reservation   reservation[]
-  restaurant    restaurant? @relation("owner_restaurant") 
+  restaurants   restaurant[]  @relation("owner_restaurant")
 }

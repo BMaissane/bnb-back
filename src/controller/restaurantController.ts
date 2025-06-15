@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { CreateRestaurantDto, UpdateRestaurantDto } from '../interface/dto/restaurantDto';
 import { RestaurantService } from '../service/restaurantService';
 import {errorHandler} from "../middleware/errorHandler";
+import prisma from '../prisma/client';
 
 export const RestaurantController = {
   
@@ -28,21 +29,18 @@ export const RestaurantController = {
   },
 
   // GET api/restaurant/:id
-  async getById(req: Request, res: Response, next : NextFunction) {
-    try {
-      const { id } = req.params;
-      const restaurant = await RestaurantService.getRestaurantById(Number(id));
-      if (!restaurant) {
-        return res.status(404).json({ error: 'Restaurant not found' });
-      }
-      res.json(restaurant);
-    } catch (error) {
-       next(error);
-    }
-  },
+async getById(req: Request, res: Response, next: NextFunction) {
+  try {
+    const restaurant = await RestaurantService.getRestaurantById(Number(req.params.id));
+    if (!restaurant) return res.status(404).json({ error: 'Restaurant not found' });
+    res.json(restaurant);
+  } catch (error) {
+    next(error);
+  }
+},
 
   // GET api/restaurant/owner/:id
-  async getByOwner(req: Request, res: Response, next : NextFunction) {
+  async getRestaurantsByOwner(req: Request, res: Response, next : NextFunction) {
     try {
       const { ownerId } = req.params;
       const restaurants = await RestaurantService.getRestaurantsByOwner(Number(ownerId));
@@ -53,28 +51,42 @@ export const RestaurantController = {
   },
 
   // PUT api/restaurant/:id
-  async update(req: Request, res: Response, next : NextFunction) {
-    try {
-      const { id } = req.params;
-      const data: UpdateRestaurantDto = req.body;
-      const restaurant = await RestaurantService.updateRestaurant(Number(id), data);
-      res.json(restaurant);
-    } catch (error) {
-      console.error(error);
-       next(error);
-    }
-  },
+async update(req: Request, res: Response, next: NextFunction) {
+  try {
+    const updated = await RestaurantService.updateRestaurant(
+      Number(req.params.id),
+      req.body
+    );
+    res.json(updated);
+  } catch (error) {
+    next(error);
+  }
+},
 
   // DELETE api/restaurant/:id
-  async delete(req: Request, res: Response, next : NextFunction) {
-    try {
-      const { id } = req.params;
-      await RestaurantService.deleteRestaurant(Number(id));
-      res.status(204).send();
-    } catch (error) {
-       next(error);
-    }
-  },
+async delete(req: Request, res: Response, next: NextFunction) {
+  try {
+    const restaurantId = Number(req.params.id);
+    console.log(`Tentative de suppression du restaurant ${restaurantId}`);
+    
+    const beforeDelete = await prisma.restaurant.findUnique({
+      where: { id: restaurantId }
+    });
+    console.log('Avant suppression:', beforeDelete);
+    
+    await RestaurantService.deleteRestaurant(restaurantId);
+    
+    const afterDelete = await prisma.restaurant.findUnique({
+      where: { id: restaurantId }
+    });
+    console.log('Après suppression:', afterDelete);
+    
+    res.status(204).send();
+  } catch (error) {
+    console.error('Erreur lors de la suppression:', error);
+    next(error);
+  }
+},
 
   // GET api/restaurant
   async search(req: Request, res: Response, next : NextFunction) {

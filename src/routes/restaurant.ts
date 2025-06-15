@@ -1,7 +1,7 @@
 import express, { Router } from 'express';
 import { RestaurantController } from '../controller/restaurantController';
 import { authenticate } from '../middleware/authMiddleware';
-import router from './auth';
+
 
 const restaurantRouter = express.Router();
 
@@ -12,7 +12,7 @@ restaurantRouter.get('/:id', RestaurantController.getById);
 
 // Protected routes (require authentication)
 restaurantRouter.post('/', RestaurantController.create);
-restaurantRouter.get('/owner/:ownerId', authenticate, RestaurantController.getByOwner);
+restaurantRouter.get('/owner/:ownerId', authenticate, RestaurantController.getRestaurantsByOwner);
 restaurantRouter.put('/:id', authenticate, RestaurantController.update);
 restaurantRouter.delete('/:id', authenticate, RestaurantController.delete);
 

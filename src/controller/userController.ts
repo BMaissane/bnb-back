@@ -23,7 +23,7 @@ export const getUserById = async (req: Request, res: Response) => {
     // Test DIRECT sans middleware
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: { restaurant: true } // Charge la relation pour debug
+      include: { restaurants: true } // Charge la relation pour debug
     });
     console.log("📦 Résultat Prisma:", user);
 
@@ -107,7 +107,7 @@ export const deleteUser = async (req: Request, res: Response) => {
     // 1. Vérifier que l'utilisateur existe
     const user = await prisma.user.findUnique({ 
       where: { id: userId },
-      include: { restaurant: true } // Important pour les RESTAURANT_OWNER
+      include: { restaurants: true } // Important pour les RESTAURANT_OWNER
     });
 
     if (!user) {
@@ -115,7 +115,7 @@ export const deleteUser = async (req: Request, res: Response) => {
     }
 
     // 2. Vérifier les contraintes (si owner d'un restaurant)
-    if (user.type_user === 'RESTAURANT_OWNER' && user.restaurant) {
+    if (user.type_user === 'RESTAURANT_OWNER' && user.restaurants) {
       return res.status(400).json({ 
         error: 'Cannot delete restaurant owner with active restaurant' 
       });
@@ -125,7 +125,7 @@ export const deleteUser = async (req: Request, res: Response) => {
     console.log('Exécution de la suppression...');
     await prisma.user.delete({ 
       where: { id: userId },
-      include: { restaurant: true } // Pour le debug
+      include: { restaurants: true } // Pour le debug
     });
 
     console.log('Suppression réussie');
