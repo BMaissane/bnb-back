@@ -3,17 +3,35 @@ import { CreateRestaurantDto, UpdateRestaurantDto } from '../interface/dto/resta
 import { RestaurantService } from '../service/restaurantService';
 import {errorHandler} from "../middleware/errorHandler";
 import prisma from '../prisma/client';
+import { ForbiddenError } from '../interface/response/errors';
 
 export const RestaurantController = {
   
   // POST api/restaurants => :id
-  async create(req: Request, res: Response, next : NextFunction) {
+async create(req: Request, res: Response, next: NextFunction) {
     try {
-      const data: CreateRestaurantDto = req.body;
-      const restaurant = await RestaurantService.createRestaurant(data);
+      // 1. Vérification TypeSafe de l'authentification
+      if (!req.user) {
+        throw new Error('Authentication required'); // Ou utilisez une erreur personnalisée
+      }
+
+      // 2. Vérification des permissions (via votre interface typée)
+      if (req.user.type_user !== 'RESTAURANT_OWNER') {
+        throw new ForbiddenError('Only restaurant owners can create establishments');
+      }
+
+      // 3. Préparation des données (type-safe grâce à votre interface)
+      const restaurantData: CreateRestaurantDto = {
+        ...req.body,
+        owner_id: req.user.id // Garanti par le typage de Request.user
+      };
+
+      // 4. Appel au service
+      const restaurant = await RestaurantService.createRestaurant(restaurantData);
+      
       res.status(201).json(restaurant);
+
     } catch (error) {
-      console.error('Erreur création restaurant:', error);
       next(error);
     }
   },

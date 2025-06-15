@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { Prisma } from '@prisma/client';
 import { ZodError } from 'zod';
+import { ForbiddenError } from '../interface/response/errors';
 
 interface HttpError extends Error {
   statusCode?: number;
@@ -30,6 +31,14 @@ export const errorHandler = (
       details: err.errors
     });
   }
+
+  // Gestion droit de création de restaurant (forbidden pour clients)
+  if (err instanceof ForbiddenError) {
+  return res.status(403).json({
+    error: err.message,
+    code: 'FORBIDDEN_OPERATION'
+  });
+}
 
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Internal Server Error';
