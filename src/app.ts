@@ -7,11 +7,19 @@ import { errorHandler } from './middleware/errorHandler';
 import authRouter from './routes/auth';
 import userRouter from './routes/user';
 import reservationsRouter from './routes/reservation';
+import restaurantRouter from './routes/restaurant';
 import testRoutes from './routes/testRoutes';
 import { urlencodedParser } from './middleware/bodyParser';
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// 3. Logging des requêtes
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
+  console.log('Body:', req.body); // <-- Ajout crucial pour debug
+  next();
+});
 
 // 1. Middlewares de sécurité 
 app.use(helmet());
@@ -20,13 +28,6 @@ app.use(corsMiddleware);
 // 2. Body parsing 
 app.use(express.json()); 
 app.use(urlencodedParser);
-
-// 3. Logging des requêtes
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
-  console.log('Body:', req.body); // <-- Ajout crucial pour debug
-  next();
-});
 
 // 4. Prisma middleware
 app.use((req, res, next) => {
@@ -38,8 +39,9 @@ app.use((req, res, next) => {
 
 // 5. Routes 
 app.use('/api/auth', authRouter);
-app.use('/api/users', userRouter); // <-- Changé de /users à /api/users
+app.use('/api/users', userRouter); 
 app.use('/api/reservations', reservationsRouter);
+app.use('/api/restaurants', restaurantRouter)
 app.use('/api/test', testRoutes);
 
 // 6. Route racine

@@ -1,48 +1,92 @@
-import { Request, Response } from 'express';
-import { prisma } from '../prisma/client';
-import { z } from 'zod'; // Pour la validation
+import { NextFunction, Request, Response } from 'express';
+import { CreateRestaurantDto, UpdateRestaurantDto } from '../interface/dto/restaurantDto';
+import { RestaurantService } from '../service/restaurantService';
+import {errorHandler} from "../middleware/errorHandler";
 
-// Schéma de validation avec Zod
-const restaurantSchema = z.object({
-  name: z.string().min(2, "Le nom doit contenir au moins 2 caractères"),
-  siret: z.string().length(14, "Le SIRET doit contenir 14 chiffres"),
-  address: z.string().min(5, "L'adresse est trop courte"),
-  ownerId: z.number().int("L'ID du propriétaire doit être un nombre entier")
-});
-
-export const createRestaurant = async (req: Request, res: Response) => {
-  try {
-    // 1. Validation des données
-    const validatedData = restaurantSchema.parse(req.body);
-
-    // 2. Vérification que l'owner existe et est bien un "owner"
-    const owner = await prisma.user.findUnique({
-      where: { id: validatedData.ownerId, type_user: 'RESTAURANT_OWNER' }
-    });
-
-    if (!owner) {
-      return res.status(400).json({ 
-        error: "Owner invalide : l'utilisateur n'existe pas ou n'a pas les droits" 
-      });
+export const RestaurantController = {
+  
+  // POST api/restaurants => :id
+  async create(req: Request, res: Response, next : NextFunction) {
+    try {
+      const data: CreateRestaurantDto = req.body;
+      const restaurant = await RestaurantService.createRestaurant(data);
+      res.status(201).json(restaurant);
+    } catch (error) {
+      console.error('Erreur création restaurant:', error);
+      next(error);
     }
+  },
 
-    // 3. Création du restaurant
-    const restaurant = await prisma.restaurant.create({
-      data: {
-        name: validatedData.name,
-        siret: validatedData.siret,
-        address: validatedData.address,
-        owner: { connect: { id: validatedData.ownerId } }
+  // GET api/restaurant
+  async getAll(req: Request, res: Response, next : NextFunction) {
+    try {
+      const restaurants = await RestaurantService.getAllRestaurants();
+      res.json(restaurants);
+    } catch (error) {
+       next(error);
+    }
+  },
+
+  // GET api/restaurant/:id
+  async getById(req: Request, res: Response, next : NextFunction) {
+    try {
+      const { id } = req.params;
+      const restaurant = await RestaurantService.getRestaurantById(Number(id));
+      if (!restaurant) {
+        return res.status(404).json({ error: 'Restaurant not found' });
       }
-    });
-
-    res.status(201).json(restaurant);
-
-  } catch (error) {
-    if (error instanceof z.ZodError) {
-      // Erreur de validation Zod
-      return res.status(400).json({ errors: error.flatten() });
+      res.json(restaurant);
+    } catch (error) {
+       next(error);
     }
-    res.status(500).json({ error: "Erreur serveur" });
+  },
+
+  // GET api/restaurant/owner/:id
+  async getByOwner(req: Request, res: Response, next : NextFunction) {
+    try {
+      const { ownerId } = req.params;
+      const restaurants = await RestaurantService.getRestaurantsByOwner(Number(ownerId));
+      res.json(restaurants);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // PUT api/restaurant/:id
+  async update(req: Request, res: Response, next : NextFunction) {
+    try {
+      const { id } = req.params;
+      const data: UpdateRestaurantDto = req.body;
+      const restaurant = await RestaurantService.updateRestaurant(Number(id), data);
+      res.json(restaurant);
+    } catch (error) {
+      console.error(error);
+       next(error);
+    }
+  },
+
+  // DELETE api/restaurant/:id
+  async delete(req: Request, res: Response, next : NextFunction) {
+    try {
+      const { id } = req.params;
+      await RestaurantService.deleteRestaurant(Number(id));
+      res.status(204).send();
+    } catch (error) {
+       next(error);
+    }
+  },
+
+  // GET api/restaurant
+  async search(req: Request, res: Response, next : NextFunction) {
+    try {
+      const { q } = req.query;
+      if (!q) {
+        return res.status(400).json({ error: 'Search query is required' });
+      }
+      const restaurants = await RestaurantService.searchRestaurants(q.toString());
+      res.json(restaurants);
+    } catch (error) {
+       next(error);
+    }
   }
 };
