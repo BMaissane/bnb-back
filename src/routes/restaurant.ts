@@ -6,7 +6,7 @@ import { checkOwner } from '../middleware/checkOwner';
 const restaurantRouter = express.Router();
 
 // Public routes
-restaurantRouter.get('/', RestaurantController.getAll);
+restaurantRouter.get('/', RestaurantController.getAllRestaurants);
 restaurantRouter.get('/search', RestaurantController.search);
 restaurantRouter.get('/:id', RestaurantController.getById);
 

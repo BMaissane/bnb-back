@@ -1,13 +1,20 @@
-import { Request, Response } from 'express';
+import { NextFunction, Request, Response } from 'express';
 import { MenuService } from '../service/menuService';
-import { CreateMenuSchema } from '../interface/dto/menuDto';
+import { CreateMenuSchema, UpdateMenuDto } from '../interface/dto/menuDto';
 import { z } from 'zod';
 import { HttpException } from '../exception/httpException';
+import prisma from '../prisma/client';
 
-export class MenuController {
-  static async createMenu(req: Request, res: Response) {
+export const menuController = {
+   
+  // POST api/restaurant/:id/menu
+async createMenu(req: Request, res: Response, next: NextFunction) {
     try {
-      const validatedData = CreateMenuSchema.parse(req.body);
+       const restaurantId = Number(req.params.restaurantId); // Récupération depuis l'URL
+    const validatedData = CreateMenuSchema.parse({
+      ...req.body,
+      restaurantId // Injection dans le DTO
+    });
       const menu = await MenuService.createMenu(validatedData);
       res.status(201).json(menu);
     } catch (error) {
@@ -17,19 +24,74 @@ export class MenuController {
           details: error.errors
         });
       }
-      if (error instanceof HttpException) {
-        return res.status(error.status).json({ error: error.message });
-      }
-      res.status(500).json({ error: 'Internal server error' });
+      next(error);
     }
-  }
+  },
 
-  static async getMenu(req: Request, res: Response) {
+  // GET api/restaurant/:id/menu/:id
+async getMenu(req: Request, res: Response, next: NextFunction) {
     try {
-      const menu = await MenuService.getMenuWithItems(Number(req.params.id));
+      const menu = await prisma.menu.findUnique({
+        where: { id: Number(req.params.id) },
+        include: {
+          menu_has_item: {
+            include: {
+              item: {
+                select: {
+                  id: true,
+                  name: true,
+                  description: true,
+                  category: true,
+                  base_price: true
+                }
+              }
+            }
+          }
+        }
+      });
+      
+      if (!menu) throw new HttpException(404, 'Menu not found');
       res.json(menu);
     } catch (error) {
-    
+      next(error);
     }
-  }
+  },
+
+  // GET RESTAURANT WITH MENUS api/restaurants/:id/menu
+  async getRestaurantMenus(req: Request, res: Response, next: NextFunction) {
+    try {
+      const menus = await MenuService.getMenusByRestaurant(
+        Number(req.params.restaurantId)
+      );
+      res.json(menus);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // PUT api/restaurants/:id/menu/:id
+  async updateMenu(req: Request, res: Response, next: NextFunction) {
+    try {
+      const validatedData = CreateMenuSchema.partial().parse(req.body);
+      const updatedMenu = await MenuService.updateMenu(
+        Number(req.params.menuId),
+        validatedData
+      );
+      res.json(updatedMenu);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  // DELETE api/restaurant/:id/menu/:id
+  async deleteMenu(req: Request, res: Response, next: NextFunction) {
+    try {
+      await MenuService.deleteMenu(Number(req.params.menuId));
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  },
+
 }
+

@@ -11,7 +11,7 @@ export const CreateMenuSchema = z.object({
       name: z.string().min(2),
       description: z.string().optional(),
       category: z.nativeEnum(ItemCategory),
-      price: z.number().positive(),
+      price: z.number().positive(), // Garder price dans le DTO
       stock: z.number().int().nonnegative().optional()
     })
   ).optional()

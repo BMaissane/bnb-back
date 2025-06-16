@@ -8,6 +8,7 @@ import authRouter from './routes/auth';
 import userRouter from './routes/user';
 import reservationsRouter from './routes/reservation';
 import restaurantRouter from './routes/restaurant';
+import menuRouter from './routes/menu';
 import testRoutes from './routes/testRoutes';
 import { urlencodedParser } from './middleware/bodyParser';
 
@@ -41,7 +42,8 @@ app.use((req, res, next) => {
 app.use('/api/auth', authRouter);
 app.use('/api/users', userRouter); 
 app.use('/api/reservations', reservationsRouter);
-app.use('/api/restaurants', restaurantRouter)
+app.use('/api/restaurants', restaurantRouter);
+app.use('/api/restaurants/:restaurantId/menus', menuRouter);
 app.use('/api/test', testRoutes);
 
 // 6. Route racine

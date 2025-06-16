@@ -33,12 +33,22 @@ async create(req: Request, res: Response, next: NextFunction) {
 },
 
   // GET api/restaurant
-  async getAll(req: Request, res: Response, next : NextFunction) {
+ async getAllRestaurants(req: Request, res: Response, next: NextFunction) {
     try {
-      const restaurants = await RestaurantService.getAllRestaurants();
+      const restaurants = await prisma.restaurant.findMany({
+        where: { is_active: true },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          image_url: true,
+          genre: true
+          // Exclure les données sensibles
+        }
+      });
       res.json(restaurants);
     } catch (error) {
-       next(error);
+      next(error);
     }
   },
 

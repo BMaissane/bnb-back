@@ -1,47 +1,139 @@
 import { Prisma } from '@prisma/client';
 import { CreateMenuDto, UpdateMenuDto } from '../interface/dto/menuDto';
 import { prisma } from '../prisma/client';
-import { HttpException } from '../exception/httpException';
 
-export class MenuService {
-  static getMenuWithItems(arg0: number) {
-      throw new Error('Method not implemented.');
-  }
-  static async createMenu(dto: CreateMenuDto) {
-    try {
-      return await prisma.$transaction(async (prisma) => {
-        // 1. Créez d'abord le menu
-        const menu = await prisma.menu.create({
-          data: {
-            restaurant_id: dto.restaurantId,
-            name: dto.name,
-            description: dto.description,
-            is_active: dto.isActive
-          }
-        });
+export const MenuService = {
+  
+    async createMenu(data: CreateMenuDto) {
+    return prisma.$transaction(async (tx) => {
+      // 1. Création du menu
+      const menu = await tx.menu.create({
+        data: {
+          restaurant_id: data.restaurantId,
+          name: data.name,
+          description: data.description,
+          is_active: data.isActive ?? true
+        }
+      });
 
-        // 2. Créez les items séparément si besoin
-        if (dto.items && dto.items.length > 0) {
-          await prisma.item.createMany({
-            data: dto.items.map(item => ({
+      // 2. Création des items et liaison via menu_has_item
+      if (data.items && data.items.length > 0) {
+        for (const itemData of data.items) {
+          // Création de l'item avec base_price
+          const item = await tx.item.create({
+            data: {
+              name: itemData.name,
+              description: itemData.description,
+              category: itemData.category,
+              base_price: new Prisma.Decimal(itemData.price), // Conversion en Decimal
+              restaurant_has_item: {
+                create: {
+                  restaurant_id: data.restaurantId,
+                  current_price: new Prisma.Decimal(itemData.price),
+                  stock: itemData.stock ?? 0
+                }
+              }
+            }
+          });
+
+          // Liaison au menu via menu_has_item
+          await tx.menu_has_item.create({
+            data: {
               menu_id: menu.id,
-              name: item.name,
-              description: item.description,
-              category: item.category,
-              price: item.price,
-              stock: item.stock
-            }))
+              item_id: item.id
+            }
           });
         }
+      }
 
-        // 3. Récupérez le menu avec ses items
-        return prisma.menu.findUnique({
-          where: { id: menu.id },
-          include: { items: true }
-        });
+      // 3. Retourne le menu avec ses items
+      return tx.menu.findUnique({
+        where: { id: menu.id },
+        include: {
+          menu_has_item: {
+            include: {
+              item: true
+            }
+          }
+        }
       });
-    } catch (error) {
-      // ... gestion d'erreurs existante
+    });
+  },
+
+  async getMenuWithItems(id: number) {
+    return prisma.menu.findUnique({
+      where: { id },
+      include: {
+    menu_has_item: {
+    include: {
+      item: true
     }
   }
 }
+    });
+  },
+
+  async updateMenu(id: number, data: UpdateMenuDto) {
+    return prisma.$transaction(async (tx) => {
+      // 1. Mise à jour du menu
+      await tx.menu.update({
+        where: { id },
+        data: {
+          name: data.name,
+          description: data.description,
+          is_active: data.isActive
+        }
+      });
+
+      // Appel à table de liaison menu_has_item
+      if (data.items) {
+        await tx.item.deleteMany(
+          {where: {
+           menu_has_item: {
+    some: {
+      menu_id: id 
+    }
+  }
+}});
+        await tx.item.createMany({
+          data: data.items.map(item => ({
+            menu_id: id,
+            name: item.name,
+            description: item.description,
+            category: item.category,
+            base_price: item.price,
+            stock: item.stock ?? 0
+          }))
+        });
+      }
+
+      return this.getMenuWithItems(id);
+    });
+  },
+
+  async deleteMenu(id: number) {
+    return prisma.menu.delete({
+      where: { id }
+    });
+    // La suppression en cascade des items sera gérée par Prisma via schema.prisma
+  },
+
+  async getMenusByRestaurant(restaurantId: number) {
+    return prisma.menu.findMany({
+      where: { restaurant_id: restaurantId },
+      include: {
+      menu_has_item: {
+      include: {
+      item: {
+        select: {
+          id: true,
+          name: true,
+      
+        } 
+      }
+    }
+  }
+}
+    });
+  }
+};
