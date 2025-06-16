@@ -1,13 +1,14 @@
-import { PrismaClient } from '@prisma/client';
+import { Prisma, PrismaClient } from '@prisma/client';
 import { CreateRestaurantDto, UpdateRestaurantDto } from '../interface/dto/restaurantDto';
 
 const prisma = new PrismaClient();
 
 export const RestaurantService = {
-  async createRestaurant(data: CreateRestaurantDto) {
+async createRestaurant(data: CreateRestaurantDto) {
     return prisma.restaurant.create({
       data: {
         ...data,
+        opening_hours: data.opening_hours as Prisma.JsonObject, 
         image_url: data.image_url || 'https://example.com/placeholder.jpg',
         is_active: true
       }
@@ -61,17 +62,18 @@ async getAllRestaurants() {
     });
   },
 
-  async updateRestaurant(id: number, data: UpdateRestaurantDto) {
+   async updateRestaurant(id: number, data: UpdateRestaurantDto) {
     return prisma.restaurant.update({
       where: { id },
       data: {
         ...data,
+        opening_hours: data.opening_hours as Prisma.JsonObject, 
         updated_at: new Date()
       }
     });
   },
 
-  // (soft-delete)
+
 async deleteRestaurant(id: number) {
   console.log(`Suppression du restaurant ${id}`);
   return prisma.restaurant.delete({

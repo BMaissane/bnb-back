@@ -29,7 +29,7 @@ export class MenuController {
       const menu = await MenuService.getMenuWithItems(Number(req.params.id));
       res.json(menu);
     } catch (error) {
-      // Gestion d'erreurs similaire
+    
     }
   }
 }
