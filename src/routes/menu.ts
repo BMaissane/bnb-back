@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { menuController } from '../controller/menuController';
+import { menuController } from '../controllers/menuController';
 import { authenticate } from '../middleware/authMiddleware';
 import { checkOwner } from '../middleware/checkOwner';
 

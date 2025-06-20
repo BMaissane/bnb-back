@@ -6,7 +6,7 @@ import {
   getUserById,
   updateUser,
   deleteUser
-} from '../controller/userController';
+} from '../controllers/userController';
 import { UpdateUserSchema } from '../interface/dto/userDto';
 import { validate } from '../middleware/validate';
 

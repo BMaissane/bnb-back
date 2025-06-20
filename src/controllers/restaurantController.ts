@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
 import { CreateRestaurantDto, UpdateRestaurantDto, validateCreateRestaurant } from '../interface/dto/restaurantDto';
-import { RestaurantService } from '../service/restaurantService';
+import { RestaurantService } from '../services/restaurantService';
 import {errorHandler} from "../middleware/errorHandler";
 import prisma from '../prisma/client';
 import { ForbiddenError } from '../interface/response/errors';

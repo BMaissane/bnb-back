@@ -1,5 +1,5 @@
 import express, { Router } from 'express';
-import { RestaurantController } from '../controller/restaurantController';
+import { RestaurantController } from '../controllers/restaurantController';
 import { authenticate } from '../middleware/authMiddleware';
 import { checkOwner } from '../middleware/checkOwner';
 

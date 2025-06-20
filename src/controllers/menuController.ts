@@ -1,5 +1,5 @@
 import { NextFunction, Request, Response } from 'express';
-import { MenuService } from '../service/menuService';
+import { MenuService } from '../services/menuService';
 import { CreateMenuSchema, UpdateMenuDto } from '../interface/dto/menuDto';
 import { z } from 'zod';
 import { HttpException } from '../exception/httpException';

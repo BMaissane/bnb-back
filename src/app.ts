@@ -11,6 +11,8 @@ import restaurantRouter from './routes/restaurant';
 import menuRouter from './routes/menu';
 import testRoutes from './routes/testRoutes';
 import { urlencodedParser } from './middleware/bodyParser';
+import itemRouter from './routes/item';
+
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -43,6 +45,7 @@ app.use('/api/auth', authRouter);
 app.use('/api/users', userRouter); 
 app.use('/api/reservations', reservationsRouter);
 app.use('/api/restaurants', restaurantRouter);
+app.use('/api/items', itemRouter)
 app.use('/api/restaurants/:restaurantId/menus', menuRouter);
 app.use('/api/test', testRoutes);
 

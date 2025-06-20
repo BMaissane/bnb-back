@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import { CreateUserDto, DeleteUserDto, UpdateUserDto } from '../interface/dto/userDto';
-import { UserService } from '../service/UserService';
+import { UserService } from '../services/UserService';
 import { verifyPassword } from '../utils/authUtils';
 import user from '../routes/user';
 import prisma from '../prisma/client';

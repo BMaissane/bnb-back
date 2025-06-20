@@ -3,7 +3,7 @@ import { authenticate } from '../middleware/authMiddleware';
 import { loginUser, 
   registerUser,   
   forgotPassword, 
-  resetPassword } from '../controller/authController';
+  resetPassword } from '../controllers/authController';
 
 const router = express.Router();
 
