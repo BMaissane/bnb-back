@@ -73,6 +73,70 @@ export const MenuService = {
     });
   },
 
+
+  async getMenuById(menuId: number, restaurantId?: number) {
+  return await prisma.menu.findUnique({
+    where: { 
+      id: menuId,
+      ...(restaurantId && { restaurant_id: restaurantId }) // Optionnel
+    },
+    include: { /* ... */ }
+  });
+},
+
+  async getMenusByRestaurant(restaurantId: number) {
+    return prisma.menu.findMany({
+      where: { restaurant_id: restaurantId },
+      include: {
+      menu_has_item: {
+      include: {
+      item: {
+        select: {
+          id: true,
+          name: true,
+      
+        } 
+      }
+    }
+  }
+}
+    });
+  }, 
+
+async syncOrphanItemsToMenu(menuId: number) {
+  // Trouver les items du restaurant non liés au menu
+  const restaurant = await prisma.restaurant.findUnique({
+    where: { id: menuId }, // Suppose que menuId est lié à un restaurant
+    include: {
+      menu: { where: { id: menuId } },
+      restaurant_has_item: {
+        include: {
+          item: {
+            include: {
+              menu_has_item: {
+                where: { menu_id: menuId },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const orphanItems = restaurant?.restaurant_has_item.filter(
+    (rhi) => rhi.item.menu_has_item.length === 0
+  );
+
+  if (orphanItems?.length) {
+    await prisma.menu_has_item.createMany({
+      data: orphanItems.map((item) => ({
+        menu_id: menuId,
+        item_id: item.item_id,
+      })),
+    });
+  }
+},
+
   async updateMenu(id: number, data: UpdateMenuDto) {
     return prisma.$transaction(async (tx) => {
       // 1. Mise à jour du menu
@@ -118,22 +182,5 @@ export const MenuService = {
     // La suppression en cascade des items sera gérée par Prisma via schema.prisma
   },
 
-  async getMenusByRestaurant(restaurantId: number) {
-    return prisma.menu.findMany({
-      where: { restaurant_id: restaurantId },
-      include: {
-      menu_has_item: {
-      include: {
-      item: {
-        select: {
-          id: true,
-          name: true,
-      
-        } 
-      }
-    }
-  }
-}
-    });
-  }
+
 };

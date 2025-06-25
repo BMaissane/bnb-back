@@ -28,11 +28,19 @@ async createMenu(req: Request, res: Response, next: NextFunction) {
     }
   },
 
-  // GET api/restaurant/:id/menu/:id
-async getMenu(req: Request, res: Response, next: NextFunction) {
+  // GET /api/restaurants/:id/menus
+  async getRestaurantMenus(req: Request, res: Response) {
     try {
-      const menu = await prisma.menu.findUnique({
-        where: { id: Number(req.params.id) },
+      const restaurantId = Number(req.params.restaurantId);
+      
+      if (isNaN(restaurantId)) {
+        return res.status(400).json({ error: "Invalid restaurant ID" });
+      }
+
+      const menus = await prisma.menu.findMany({ // Notez findMany au lieu de findUnique
+        where: { 
+          restaurant_id: restaurantId 
+        },
         include: {
           menu_has_item: {
             include: {
@@ -49,27 +57,49 @@ async getMenu(req: Request, res: Response, next: NextFunction) {
           }
         }
       });
-      
-      if (!menu) throw new HttpException(404, 'Menu not found');
-      res.json(menu);
+      console.log("Params received:", req.params);
+      res.status(200).json(menus);
     } catch (error) {
-      next(error);
+      res.status(500).json({ error: "Internal server error" });
     }
   },
 
-  // GET RESTAURANT WITH MENUS api/restaurants/:id/menu
-  async getRestaurantMenus(req: Request, res: Response, next: NextFunction) {
-    try {
-      const menus = await MenuService.getMenusByRestaurant(
-        Number(req.params.restaurantId)
-      );
-      res.json(menus);
-    } catch (error) {
-      next(error);
-    }
-  },
+  // GET /api/restaurants/:id/menus/:id
+async getMenubyId(req: Request, res: Response) {
+  try {
+    const { restaurantId, menuId } = req.params;
+    
+    console.log(`Recherche menu ${menuId} dans restaurant ${restaurantId}`); // Debug
 
-  // PUT api/restaurants/:id/menu/:id
+    const menu = await prisma.menu.findFirst({
+      where: {
+        id: Number(menuId),
+        restaurant_id: Number(restaurantId)
+      },
+      include: {
+        menu_has_item: {
+          include: { item: true }
+        }
+      }
+    });
+
+    if (!menu) {
+      console.log('Menu non trouvé');
+      return res.status(404).json({ 
+        error: "Menu not found",
+        params: req.params 
+      });
+    }
+
+    res.json(menu);
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+},
+
+
+  // PUT api/restaurants/:id/menus/:id
   async updateMenu(req: Request, res: Response, next: NextFunction) {
     try {
       const validatedData = CreateMenuSchema.partial().parse(req.body);

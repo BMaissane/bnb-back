@@ -46,12 +46,12 @@ app.use('/api/users', userRouter);
 app.use('/api/reservations', reservationsRouter);
 app.use('/api/restaurants', restaurantRouter);
 app.use('/api/items', itemRouter)
-app.use('/api/restaurants/:restaurantId/menus', menuRouter);
+app.use('/api', menuRouter);
 app.use('/api/test', testRoutes);
 
 // 6. Route racine
 app.get('/', (req, res) => {
-  res.send('API BookiBlate');
+  res.send('API BookNBite');
 });
 
 // 7. Gestion des erreurs

@@ -5,8 +5,12 @@ import { checkOwner } from '../middleware/checkOwner';
 
 const router = Router({ mergeParams: true });
 
-// Public route
-router.get('/:menuId', menuController.getMenu);
+// Public routes
+// GET /api/restaurants/:restaurantId/menus
+router.get('/restaurants/:restaurantId/menus', menuController.getRestaurantMenus);
+
+// GET /api/restaurants/:restaurantId/menus/:menuId
+router.get('/restaurants/:restaurantId/menus/:menuId', menuController.getMenubyId);
 
 // Protected routes (require authentication)
 router.post('/', authenticate, menuController.createMenu);
