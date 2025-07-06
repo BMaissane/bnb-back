@@ -23,13 +23,12 @@ export const authenticate = async (
 
     next();
   } catch (error) {
-    // ... gestion des erreurs
+    next(error);
   }
 };
 
 export const authorize = (allowedTypes: UserType[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    // Pas d'erreur TS2339 ici non plus
     if (!req.user || !allowedTypes.includes(req.user.type_user)) {
       return res.status(403).json({ message: 'Accès non autorisé' });
     }

@@ -12,25 +12,29 @@ import menuRouter from './routes/menu';
 import testRoutes from './routes/testRoutes';
 import { urlencodedParser } from './middleware/bodyParser';
 import itemRouter from './routes/item';
+import timeslotRouter from './routes/timeslot';
+import bodyParser from 'body-parser';
 
 
 const app = express();
 const port = process.env.PORT || 3000;
-
-// 3. Logging des requêtes
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`);
-  console.log('Body:', req.body); // <-- Ajout crucial pour debug
-  next();
-});
 
 // 1. Middlewares de sécurité 
 app.use(helmet());
 app.use(corsMiddleware);
 
 // 2. Body parsing 
+app.use(bodyParser.json()); 
 app.use(express.json()); 
 app.use(urlencodedParser);
+
+// 3. Logging des requêtes
+app.use((req, res, next) => {
+ console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  console.log('Params:', req.params);
+  console.log('Body:', req.body);
+  next();
+});
 
 // 4. Prisma middleware
 app.use((req, res, next) => {
@@ -45,8 +49,9 @@ app.use('/api/auth', authRouter);
 app.use('/api/users', userRouter); 
 app.use('/api/reservations', reservationsRouter);
 app.use('/api/restaurants', restaurantRouter);
-app.use('/api/items', itemRouter)
-app.use('/api', menuRouter);
+app.use('/api/items', itemRouter);
+app.use('/api/menus', menuRouter);
+app.use('/api/restaurants/:id/timeslots', timeslotRouter);
 app.use('/api/test', testRoutes);
 
 // 6. Route racine
