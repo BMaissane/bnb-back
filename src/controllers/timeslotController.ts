@@ -1,5 +1,6 @@
 import { NextFunction, Request, Response } from 'express';
-import { TimeslotService } from '../services/timeslotService';
+import { formatTimeslot, TimeslotService } from '../services/timeslotService';
+import prisma from '../prisma/client';
 
 
 export const TimeslotController = {
@@ -26,65 +27,120 @@ export const TimeslotController = {
     }
   },
 
-  // GET /timeslots/restaurant/:id
-  async getByRestaurant(req: Request, res: Response, next: NextFunction) {
+  // GET restaurants/restaurantID/timeslots
+async getByRestaurant(req: Request, res: Response, next: NextFunction) {
     try {
-      const timeslots = await TimeslotService.getRestaurantTimeslots(
-        Number(req.params.id),
-        req.query.date ? { date: req.query.date as string } : undefined
-      );
-      res.json(timeslots);
+        // Conversion explicite vers le nom de champ Prisma
+        const restaurantId = Number(req.params.restaurantId);
+        if (isNaN(restaurantId)) {
+            throw new Error("ID de restaurant invalide");
+        }
+
+        const filters = {
+            restaurant_id: restaurantId, // Match avec le schéma Prisma
+            ...(req.query.date && { date: new Date(req.query.date as string) })
+        };
+
+        const timeslots = await prisma.timeslot.findMany({
+            where: filters,
+            orderBy: [{ date: 'asc' }, { start_at: 'asc' }]
+        });
+        
+        res.json(timeslots.map(formatTimeslot));
     } catch (error) {
-      next(error);
+        next(error);
     }
-  },
+},
 
   // GET /timeslots/:id
-  async getById(req: Request, res: Response, next: NextFunction) {
+async getById(req: Request, res: Response, next: NextFunction) {
     try {
-      const timeslot = await TimeslotService.getTimeslotById(Number(req.params.id));
-      if (!timeslot) {
-        return res.status(404).json({ message: 'Timeslot not found' });
-      }
-      res.json(timeslot);
+        // Validation TypeScript
+        const timeslotId = Number(req.params.timeslotId);
+        const restaurantId = Number(req.params.restaurantId);
+        
+        if (isNaN(timeslotId) || isNaN(restaurantId)) {
+            throw new Error('IDs invalides');
+        }
+
+        const timeslot = await TimeslotService.getTimeslotById(timeslotId, restaurantId);
+        res.json(timeslot);
     } catch (error) {
-      next(error);
+        next(error);
     }
-  },
+},
 
   // PATCH /timeslots/:id
-  async update(req: Request, res: Response, next: NextFunction) {
-    try {
-      const updated = await TimeslotService.updateTimeslot(
-        Number(req.params.id),
-        req.body
-      );
-      res.json(updated);
-    } catch (error) {
-      next(error);
+async update(req: Request, res: Response) {
+    const { date, start_at, end_at, capacity } = req.body;
+    const timeslotId = Number(req.params.timeslotId);
+
+    // 1. Récupérer le timeslot existant
+    const current = await prisma.timeslot.findUnique({
+        where: { id: timeslotId }
+    });
+
+    if (!current) {
+        return res.status(404).json({ error: "Timeslot non trouvé" });
     }
-  },
+
+    // 2. Préparer les nouvelles valeurs
+    const updateData: any = {
+        capacity: capacity !== undefined ? capacity : current.capacity
+    };
+
+    // 3. Gestion des dates/heures (clé du problème)
+    const targetDate = date ? new Date(date) : current.date;
+    const dateStr = targetDate.toISOString().split('T')[0];
+
+    if (start_at) {
+        updateData.start_at = new Date(`${dateStr}T${start_at}:00Z`); // Notez le Z pour UTC
+    }
+
+    if (end_at) {
+        updateData.end_at = new Date(`${dateStr}T${end_at}:00Z`); // Notez le Z pour UTC
+    }
+
+    // 4. Si on change la date principale
+    if (date) {
+        updateData.date = targetDate;
+        
+        // Recalculer start_at/end_at si non fournis
+        if (!start_at) {
+            const oldTime = current.start_at.toISOString().split('T')[1];
+            updateData.start_at = new Date(`${dateStr}T${oldTime}`);
+        }
+        
+        if (!end_at) {
+            const oldTime = current.end_at.toISOString().split('T')[1];
+            updateData.end_at = new Date(`${dateStr}T${oldTime}`);
+        }
+    }
+
+    // 5. Mise à jour
+    const updated = await prisma.timeslot.update({
+        where: { id: timeslotId },
+        data: updateData
+    });
+
+    // Formatage de la réponse
+    res.json({
+        ...updated,
+        date: updated.date.toISOString().split('T')[0],
+        start_at: updated.start_at.toISOString().split('T')[1].slice(0, 5),
+        end_at: updated.end_at.toISOString().split('T')[1].slice(0, 5)
+    });
+},
 
   // DELETE /timeslots/:id
-  async delete(req: Request, res: Response, next: NextFunction) {
+async delete(req: Request, res: Response, next: NextFunction) {
     try {
-      const timeslotId = Number(req.params.id);
-      console.log(`Attempting to delete timeslot ${timeslotId}`);
-      
-      const beforeDelete = await TimeslotService.getTimeslotById(timeslotId);
-      console.log('Before deletion:', beforeDelete);
-      
-      await TimeslotService.deleteTimeslot(timeslotId);
-      
-      const afterDelete = await TimeslotService.getTimeslotById(timeslotId);
-      console.log('After deletion:', afterDelete);
-      
-      res.status(204).send();
+        await TimeslotService.deleteTimeslot(Number(req.params.timeslotId)); // ✅ Supprime le timeslot
+        res.status(204).send(); // ✅ Réponse vide avec statut 204 (No Content)
     } catch (error) {
-      console.error('Deletion error:', error);
-      next(error);
+        next(error); 
     }
-  },
+},
 
   // GET /timeslots/available/:restaurantId
   async getAvailable(req: Request, res: Response, next: NextFunction) {
@@ -99,3 +155,5 @@ export const TimeslotController = {
     }
   }
 };
+
+

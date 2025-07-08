@@ -2,7 +2,7 @@ import { TimeslotStatus } from '@prisma/client';
 import prisma from '../prisma/client';
 
 // Formattage date
-const formatTimeslot = (timeslot: any) => ({
+export const formatTimeslot = (timeslot: any) => ({
   ...timeslot,
   date: timeslot.date.toISOString().split('T')[0],
   start_at: timeslot.start_at.toISOString().split('T')[1].slice(0, 5),
@@ -56,22 +56,36 @@ export const TimeslotService = {
     });
   },
 
-  async getRestaurantTimeslots(restaurantId: number, filters?: {
-    date?: string;
-    status?: TimeslotStatus;
-  }) {
+async getRestaurantTimeslots(restaurantId: number, filters?: { 
+    date?: string; 
+    status?: TimeslotStatus 
+}) {
+    console.log('[SERVICE] restaurantId reçu:', restaurantId); // Log de debug
+    
+    if (!restaurantId || isNaN(restaurantId)) {
+        throw new Error("Invalid restaurant ID");
+    }
+
+    const whereClause: any = {
+        restaurant_id: restaurantId // Assurez-vous que le nom correspond exactement à votre schéma Prisma
+    };
+
+    if (filters?.date) {
+        whereClause.date = new Date(filters.date);
+    }
+    
+    if (filters?.status) {
+        whereClause.status = filters.status;
+    }
+
     return await prisma.timeslot.findMany({
-      where: {
-        restaurant_id: restaurantId,
-        ...(filters?.date && { date: new Date(filters.date) }),
-        ...(filters?.status && { status: filters.status })
-      },
-      orderBy: [
-        { date: 'asc' },
-        { start_at: 'asc' }
-      ]
+        where: whereClause,
+        orderBy: [
+            { date: 'asc' },
+            { start_at: 'asc' }
+        ]
     }).then(timeslots => timeslots.map(formatTimeslot));
-  },
+},
 
   async getTimeslotById(timeslotId: number, restaurantId?: number) {
     return await prisma.timeslot.findUnique({

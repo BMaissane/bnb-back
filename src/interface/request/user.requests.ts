@@ -8,6 +8,10 @@ declare global {
         id: number;
         type_user: UserType; // Utilisez toujours type_user pour la cohérence
       };
+      params: {
+                restaurantId: string;
+                timeslotId?: string;
+            }
     }
   }
 }

@@ -4,39 +4,38 @@ import helmet from 'helmet';
 import 'reflect-metadata';
 import { corsMiddleware } from './middleware/cors';
 import { errorHandler } from './middleware/errorHandler';
+import { urlencodedParser } from './middleware/bodyParser';
 import authRouter from './routes/auth';
 import userRouter from './routes/user';
 import reservationsRouter from './routes/reservation';
-import restaurantRouter from './routes/restaurant';
 import menuRouter from './routes/menu';
-import testRoutes from './routes/testRoutes';
-import { urlencodedParser } from './middleware/bodyParser';
 import itemRouter from './routes/item';
 import timeslotRouter from './routes/timeslot';
 import bodyParser from 'body-parser';
+import testRoutes from './routes/testRoutes';
+import restaurantRouter from './routes/restaurant';
 
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 3600;
 
-// 1. Middlewares de sécurité 
+// 1. Middlewares de sécurité
 app.use(helmet());
 app.use(corsMiddleware);
 
-// 2. Body parsing 
-app.use(bodyParser.json()); 
-app.use(express.json()); 
-app.use(urlencodedParser);
+// 2. Body parsing (version simplifiée)
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// 3. Logging des requêtes
+// 3. Logging des requêtes (version corrigée)
 app.use((req, res, next) => {
- console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   console.log('Params:', req.params);
   console.log('Body:', req.body);
   next();
 });
 
-// 4. Prisma middleware
+// 4. Prisma middleware (version corrigée)
 app.use((req, res, next) => {
   res.on('finish', () => {
     prisma.$disconnect().catch(console.error);
@@ -44,27 +43,30 @@ app.use((req, res, next) => {
   next();
 });
 
-// 5. Routes 
+// 5. Routes (version corrigée)
+const restaurantParentRouter = express.Router({ mergeParams: true });
+app.use('/api/restaurants/:restaurantId', restaurantParentRouter); // :restaurantId dynamique
+restaurantParentRouter.use('/timeslots', timeslotRouter); // Route imbriquée
+
+app.use('/api/restaurants', restaurantRouter); // Route restaurant standard
 app.use('/api/auth', authRouter);
-app.use('/api/users', userRouter); 
+app.use('/api/users', userRouter);
 app.use('/api/reservations', reservationsRouter);
-app.use('/api/restaurants', restaurantRouter);
+app.use('/api/menu', menuRouter);
 app.use('/api/items', itemRouter);
-app.use('/api/menus', menuRouter);
-app.use('/api/restaurants/:id/timeslots', timeslotRouter);
+
 app.use('/api/test', testRoutes);
 
 // 6. Route racine
 app.get('/', (req, res) => {
-  res.send('API BookNBite');
+  res.send('API BookWhite');
 });
 
 // 7. Gestion des erreurs
 app.use(errorHandler);
 
-// Démarrage du serveur
 app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
+  console.log(`Server running on port ${port}`); // Template literal corrigé
 });
 
 export default app;
