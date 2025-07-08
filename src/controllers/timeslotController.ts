@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from 'express';
 import { formatTimeslot, TimeslotService } from '../services/timeslotService';
 import prisma from '../prisma/client';
+import { validateFutureDate } from '../middleware/dateValidation';
 
 
 export const TimeslotController = {
@@ -9,6 +10,12 @@ export const TimeslotController = {
     try {
       if (!req.user) throw new Error('Unauthorized');
       
+      // Validation date => past dates are not allowed
+      const slotDate = validateFutureDate(req.body.date, 'date');
+        if (req.body.start_at) {
+            validateFutureDate(`${req.body.date}T${req.body.start_at}`, 'heure de début');
+        }
+        
       const newTimeslot = await TimeslotService.createTimeslot(
         Number(req.body.restaurant_id),
         req.user.id,

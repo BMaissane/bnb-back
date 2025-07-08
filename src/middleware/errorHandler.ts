@@ -40,6 +40,13 @@ export const errorHandler = (
   });
 }
 
+if (err.message.includes("ne peut pas être dans le passé")) {
+    return res.status(400).json({ 
+        error: err.message,
+        code: 'PAST_DATE_NOT_ALLOWED'
+    });
+}
+
   const statusCode = err.statusCode || 500;
   const message = err.message || 'Internal Server Error';
 

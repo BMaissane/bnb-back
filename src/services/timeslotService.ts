@@ -10,49 +10,37 @@ export const formatTimeslot = (timeslot: any) => ({
 });
 
 export const TimeslotService = {
-  async createTimeslot(restaurantId: number, ownerId: number, data: {
+  async createTimeslot(restaurantId: number, userId: number, data: {
     date: string;
     start_at: string;
     end_at: string;
     capacity: number;
   }) {
-    return await prisma.$transaction(async (prisma) => {
-      // Verify restaurant ownership
-      const restaurant = await prisma.restaurant.findFirst({
-        where: { 
-          id: restaurantId,
-          owner_id: ownerId 
-        }
-      });
-      if (!restaurant) throw new Error("Restaurant not found or permission denied");
+    // Validation des dates
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-      // Prepare dates
-      const dateObj = new Date(data.date);
-      const startTime = new Date(`${data.date}T${data.start_at}`);
-      const endTime = new Date(`${data.date}T${data.end_at}`);
+    const slotDate = new Date(data.date);
+    if (slotDate < today) {
+      throw new Error("La date ne peut pas être dans le passé");
+    }
 
-      // Check for existing timeslot
-      const existing = await prisma.timeslot.findFirst({
-        where: {
-          restaurant_id: restaurantId,
-          date: dateObj,
-          start_at: startTime,
-          end_at: endTime
-        }
-      });
-      if (existing) throw new Error("Timeslot already exists");
+    // Validation des heures
+    const startTime = new Date(`${data.date}T${data.start_at}`);
+    if (startTime < new Date()) {
+      throw new Error("L'heure de début ne peut pas être dans le passé");
+    }
 
-      // Create new timeslot
-      return await prisma.timeslot.create({
-        data: {
-          restaurant_id: restaurantId,
-          date: dateObj,
-          start_at: startTime,
-          end_at: endTime,
-          capacity: data.capacity,
-          status: 'AVAILABLE'
-        }
-      }).then(formatTimeslot);
+    // Création formatée
+    return await prisma.timeslot.create({
+      data: {
+        restaurant_id: restaurantId,
+        date: slotDate,
+        start_at: startTime,
+        end_at: new Date(`${data.date}T${data.end_at}`),
+        capacity: data.capacity,
+        status: 'AVAILABLE'
+      }
     });
   },
 
@@ -96,13 +84,13 @@ async getRestaurantTimeslots(restaurantId: number, filters?: {
     }).then(timeslot => timeslot ? formatTimeslot(timeslot) : null);
   },
 
-  async updateTimeslot(timeslotId: number, data: {
+  async updateTimeslot(timeslotId: number, data: Partial <{
     date?: string;
     start_at?: string;
     end_at?: string;
     capacity?: number;
     status?: TimeslotStatus;
-  }) {
+  }>) {
     return await prisma.$transaction(async (prisma) => {
       // Get current timeslot data if needed for time updates
       const currentTimeslot = data.start_at || data.end_at 
