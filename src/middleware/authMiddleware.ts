@@ -29,8 +29,12 @@ export const authenticate = async (
 
 export const authorize = (allowedTypes: UserType[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user || !allowedTypes.includes(req.user.type_user)) {
-      return res.status(403).json({ message: 'Accès non autorisé' });
+    if (!req.user) {
+      return res.status(401).json({ message: 'Authentification requise' });
+    }
+    
+    if (!allowedTypes.includes(req.user.type_user)) {
+      return res.status(403).json({ message: 'Permissions insuffisantes' });
     }
     next();
   };

@@ -1,38 +1,36 @@
 import { NextFunction, Request, Response } from 'express';
 import { formatTimeslot, TimeslotService } from '../services/timeslotService';
 import prisma from '../prisma/client';
-import { validateFutureDate } from '../middleware/dateValidation';
+import { validateTimeslotDates } from '../middleware/timeslotValidation';
 
 
 export const TimeslotController = {
   // POST /timeslots
-  async createTimeslot(req: Request, res: Response, next: NextFunction) {
-    try {
-      if (!req.user) throw new Error('Unauthorized');
-      
-      // Validation date => past dates are not allowed
-      const slotDate = validateFutureDate(req.body.date, 'date');
-        if (req.body.start_at) {
-            validateFutureDate(`${req.body.date}T${req.body.start_at}`, 'heure de début');
-        }
-        
-      const newTimeslot = await TimeslotService.createTimeslot(
-        Number(req.body.restaurant_id),
-        req.user.id,
-        {
-          date: req.body.date,
-          start_at: req.body.start_at,
-          end_at: req.body.end_at,
-          capacity: Number(req.body.capacity)
-        }
-      );
-      console.log('erreur debug')
-      res.status(201).json(newTimeslot);
-    } catch (error) {
-      console.log('juste debug')
-      next(error);
+async createTimeslot(req: Request, res: Response, next: NextFunction) {
+  try {
+    if (!req.user) throw new Error('Unauthorized');
+
+    // Validation basique du body
+    if (!req.body.date || !req.body.start_at || !req.body.end_at) {
+      throw new Error('Tous les champs sont requis');
     }
-  },
+
+    const newTimeslot = await TimeslotService.createTimeslot(
+      Number(req.body.restaurant_id),
+      req.user.id,
+      {
+        date: req.body.date,
+        start_at: req.body.start_at,
+        end_at: req.body.end_at,
+        capacity: Number(req.body.capacity)
+      }
+    );
+
+    res.status(201).json(newTimeslot);
+  } catch (error) {
+    next(error);
+  }
+},
 
   // GET restaurants/restaurantID/timeslots
 async getByRestaurant(req: Request, res: Response, next: NextFunction) {
@@ -79,7 +77,7 @@ async getById(req: Request, res: Response, next: NextFunction) {
 
   // PATCH /timeslots/:id
 async update(req: Request, res: Response) {
-    const { date, start_at, end_at, capacity } = req.body;
+    const { date, start_at, end_at, capacity, status } = req.body; 
     const timeslotId = Number(req.params.timeslotId);
 
     // 1. Récupérer le timeslot existant
@@ -90,10 +88,11 @@ async update(req: Request, res: Response) {
     if (!current) {
         return res.status(404).json({ error: "Timeslot non trouvé" });
     }
-
+    
     // 2. Préparer les nouvelles valeurs
     const updateData: any = {
-        capacity: capacity !== undefined ? capacity : current.capacity
+        capacity: capacity !== undefined ? capacity : current.capacity,
+        status: status !== undefined ? status : current.status
     };
 
     // 3. Gestion des dates/heures (clé du problème)

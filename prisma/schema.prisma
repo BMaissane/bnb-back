@@ -153,8 +153,8 @@ model timeslot {
   id            Int            @id @default(autoincrement())
   restaurant_id Int
   date          DateTime       @db.Date
-  start_at      DateTime       @db.Time(6)
-  end_at        DateTime       @db.Time(6)
+  start_at      DateTime       
+  end_at        DateTime       
   capacity      Int
   status        TimeslotStatus // (AVAILABLE, BOOKED, UNAVAILABLE)
   created_at    DateTime?      @default(now()) @db.Timestamptz(6)
@@ -165,6 +165,9 @@ model timeslot {
   // Contrainte de validation de date via index
    @@index([date, start_at])
   @@index([restaurant_id])
+
+    // Contrainte pour empêcher les dates passées
+  @@map("timeslots")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
