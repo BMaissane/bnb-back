@@ -1,13 +1,51 @@
-import { TimeslotStatus } from '@prisma/client';
-import prisma from '../prisma/client';
+import { PrismaClient, timeslot, TimeslotStatus } from '@prisma/client';
 
-// Formattage date
-export const formatTimeslot = (timeslot: any) => ({
+const prisma = new PrismaClient();
+
+// Helper pour le formatage des dates (exemple existant)
+export const formatTimeslot = (timeslot: timeslot) => ({
   ...timeslot,
   date: timeslot.date.toISOString().split('T')[0],
   start_at: timeslot.start_at.toISOString().split('T')[1].slice(0, 5),
   end_at: timeslot.end_at.toISOString().split('T')[1].slice(0, 5)
 });
+
+// Helper interne pour la gestion des dates
+function prepareDateTimeUpdates(
+  data: Partial<{
+    date?: string;
+    start_at?: string;
+    end_at?: string;
+  }>, 
+  current: timeslot
+) {
+  const updateData: {
+    date?: Date;
+    start_at?: Date;
+    end_at?: Date;
+  } = {};
+  const dateToUse = data.date || current.date.toISOString().split('T')[0];
+
+  if (data.date) {
+    updateData.date = new Date(data.date);
+    
+    if (!data.start_at) {
+      updateData.start_at = new Date(`${data.date}T${current.start_at.toISOString().split('T')[1]}`);
+    }
+    if (!data.end_at) {
+      updateData.end_at = new Date(`${data.date}T${current.end_at.toISOString().split('T')[1]}`);
+    }
+  }
+
+  if (data.start_at) {
+    updateData.start_at = new Date(`${dateToUse}T${data.start_at}`);
+  }
+  if (data.end_at) {
+    updateData.end_at = new Date(`${dateToUse}T${data.end_at}`);
+  }
+
+  return updateData;
+}
 
 export const TimeslotService = {
 
@@ -78,62 +116,54 @@ async getRestaurantTimeslots(restaurantId: number, filters?: {
   },
 
   // PATCH/UPDATE
-async updateTimeslot(timeslotId: number, data: Partial<{
-    date?: string;
-    start_at?: string;
-    end_at?: string;
-    capacity?: number;
-    status?: TimeslotStatus;
-}>) {
+  async updateTimeslot(
+    timeslotId: number, 
+    data: Partial<{
+      date?: string;
+      start_at?: string;
+      end_at?: string;
+      capacity?: number;
+      status?: TimeslotStatus;
+    }>
+  ) {
     return await prisma.$transaction(async (prisma) => {
-        // Vérification de l'existence du timeslot
-        const current = await prisma.timeslot.findUnique({
-            where: { id: timeslotId }
-        });
-        
-        if (!current) {
-            throw new Error("Timeslot not found");
-        }
+      const current = await prisma.timeslot.findUniqueOrThrow({ 
+        where: { id: timeslotId }
+      });
 
-        // 1. Calcul de la nouvelle capacité
-        const newCapacity = data.capacity ?? current.capacity;
-
-        // 2. Règles métier pour le statut
-        let newStatus: TimeslotStatus;
-        
-        if (data.status !== undefined) {
-            // Cas 1 : Statut forcé manuellement
-            newStatus = data.status; 
-        } else if (newCapacity <= 0) {
-            // Cas 2 : Capacité épuisée -> AUTO-BOOKED
-            newStatus = 'BOOKED'; // Ou 'UNAVAILABLE' selon votre choix
-        } else {
-            // Cas 3 : Conserve le statut existant
-            newStatus = current.status;
-        }
-
-        // 3. Préparation des données
-        const updateData: any = {
-            capacity: newCapacity,
-            status: newStatus // Intègre toutes les règles ci-dessus
-        };
-
-        
-        // Gestion des dates
-        if (data.date) updateData.date = new Date(data.date);
-        
-        // Gestion des heures
-        const dateToUse = data.date || current.date.toISOString().split('T')[0];
-        if (data.start_at) updateData.start_at = new Date(`${dateToUse}T${data.start_at}`);
-        if (data.end_at) updateData.end_at = new Date(`${dateToUse}T${data.end_at}`);
-
-        // Mise à jour
+      // 1. Gestion prioritaire de UNAVAILABLE
+      if (data.status === 'UNAVAILABLE') {
         return await prisma.timeslot.update({
-            where: { id: timeslotId },
-            data: updateData
+          where: { id: timeslotId },
+          data: {
+            ...data,
+            status: 'UNAVAILABLE',
+            ...prepareDateTimeUpdates(data, current)
+          }
         }).then(formatTimeslot);
+      }
+
+      // 2. Logique métier
+      const newCapacity = data.capacity ?? current.capacity;
+      let newStatus = data.status ?? current.status;
+      
+      if (newCapacity <= 0 && current.status !== 'UNAVAILABLE') {
+        newStatus = 'BOOKED';
+      } else if (newCapacity > 0 && current.status === 'BOOKED') {
+        newStatus = 'AVAILABLE';
+      }
+
+      // 3. Mise à jour finale
+      return await prisma.timeslot.update({
+        where: { id: timeslotId },
+        data: {
+          capacity: newCapacity,
+          status: newStatus,
+          ...prepareDateTimeUpdates(data, current)
+        }
+      }).then(formatTimeslot);
     });
-},
+  },
 
   //DELETE
   async deleteTimeslot(timeslotId: number) {

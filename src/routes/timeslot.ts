@@ -20,7 +20,7 @@ router.get('/', (req, res, next) => {
 // GET /api/timeslots/:id (conservé pour la cohérence)
 router.get('/:timeslotId', TimeslotController.getById); 
 
-// GET /api/restaurants/:id/timeslots/available
+// GET /api/timeslots/available/:restaurantId
 router.get('/available', TimeslotController.getAvailable);
 
 // PATCH /api/timeslots/:id

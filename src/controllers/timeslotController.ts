@@ -75,91 +75,54 @@ async getById(req: Request, res: Response, next: NextFunction) {
     }
 },
 
+// GET /timeslots/available/:restaurantId
+async getAvailable(req: Request, res: Response, next: NextFunction) {
+    try {
+        const restaurantId = Number(req.params.restaurantId);
+        if (isNaN(restaurantId)) {
+            throw new Error("ID de restaurant invalide");
+        }
+
+        const timeslots = await prisma.timeslot.findMany({
+            where: {
+                restaurant_id: restaurantId,
+                status: 'AVAILABLE',
+                date: { gte: new Date() } // Seulement les futurs créneaux
+            },
+            orderBy: [
+                { date: 'asc' },
+                { start_at: 'asc' }
+            ]
+        });
+        
+        res.json(timeslots.map(formatTimeslot));
+    } catch (error) {
+        next(error);
+    }
+},
+
   // PATCH /timeslots/:id
-async update(req: Request, res: Response) {
-    const { date, start_at, end_at, capacity, status } = req.body; 
-    const timeslotId = Number(req.params.timeslotId);
-
-    // 1. Récupérer le timeslot existant
-    const current = await prisma.timeslot.findUnique({
-        where: { id: timeslotId }
-    });
-
-    if (!current) {
-        return res.status(404).json({ error: "Timeslot non trouvé" });
+async update(req: Request, res: Response, next : NextFunction) {
+    try {
+        const updated = await TimeslotService.updateTimeslot(
+            Number(req.params.timeslotId),
+            req.body // Transmet toutes les données brutes
+        );
+        res.json(updated); // Reçoit déjà des données formatées
+    } catch (error) {
+       next(error);
     }
-    
-    // 2. Préparer les nouvelles valeurs
-    const updateData: any = {
-        capacity: capacity !== undefined ? capacity : current.capacity,
-        status: status !== undefined ? status : current.status
-    };
-
-    // 3. Gestion des dates/heures (clé du problème)
-    const targetDate = date ? new Date(date) : current.date;
-    const dateStr = targetDate.toISOString().split('T')[0];
-
-    if (start_at) {
-        updateData.start_at = new Date(`${dateStr}T${start_at}:00Z`); // Notez le Z pour UTC
-    }
-
-    if (end_at) {
-        updateData.end_at = new Date(`${dateStr}T${end_at}:00Z`); // Notez le Z pour UTC
-    }
-
-    // 4. Si on change la date principale
-    if (date) {
-        updateData.date = targetDate;
-        
-        // Recalculer start_at/end_at si non fournis
-        if (!start_at) {
-            const oldTime = current.start_at.toISOString().split('T')[1];
-            updateData.start_at = new Date(`${dateStr}T${oldTime}`);
-        }
-        
-        if (!end_at) {
-            const oldTime = current.end_at.toISOString().split('T')[1];
-            updateData.end_at = new Date(`${dateStr}T${oldTime}`);
-        }
-    }
-
-    // 5. Mise à jour
-    const updated = await prisma.timeslot.update({
-        where: { id: timeslotId },
-        data: updateData
-    });
-
-    // Formatage de la réponse
-    res.json({
-        ...updated,
-        date: updated.date.toISOString().split('T')[0],
-        start_at: updated.start_at.toISOString().split('T')[1].slice(0, 5),
-        end_at: updated.end_at.toISOString().split('T')[1].slice(0, 5)
-    });
 },
 
   // DELETE /timeslots/:id
 async delete(req: Request, res: Response, next: NextFunction) {
     try {
-        await TimeslotService.deleteTimeslot(Number(req.params.timeslotId)); // ✅ Supprime le timeslot
+        await TimeslotService.deleteTimeslot(Number(req.params.timeslotId)); 
         res.status(204).send(); // ✅ Réponse vide avec statut 204 (No Content)
     } catch (error) {
         next(error); 
     }
-},
-
-  // GET /timeslots/available/:restaurantId
-  async getAvailable(req: Request, res: Response, next: NextFunction) {
-    try {
-      const availableTimeslots = await TimeslotService.getRestaurantTimeslots(
-        Number(req.params.restaurantId),
-        { status: 'AVAILABLE', date: req.query.date as string }
-      );
-      res.json(availableTimeslots);
-    } catch (error) {
-      next(error);
-    }
-  }
+}
 };
 
 
