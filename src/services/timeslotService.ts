@@ -115,6 +115,21 @@ async getRestaurantTimeslots(restaurantId: number, filters?: {
     }).then(timeslot => timeslot ? formatTimeslot(timeslot) : null);
   },
 
+  // GET ONLY AVAIABLE TIMESLOTS
+   async getAvailableTimeslots(restaurantId: number, filters?: { date?: string }) {
+    return await prisma.timeslot.findMany({
+      where: {
+        restaurant_id: restaurantId,
+        status: 'AVAILABLE',
+        ...(filters?.date && { date: new Date(filters.date) })
+      },
+      orderBy: [
+        { date: 'asc' },
+        { start_at: 'asc' }
+      ]
+    }).then(timeslots => timeslots.map(formatTimeslot));
+  },
+
   // PATCH/UPDATE
   async updateTimeslot(
     timeslotId: number, 

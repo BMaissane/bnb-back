@@ -76,29 +76,31 @@ async getById(req: Request, res: Response, next: NextFunction) {
 },
 
 // GET /timeslots/available/:restaurantId
-async getAvailable(req: Request, res: Response, next: NextFunction) {
-    try {
-        const restaurantId = Number(req.params.restaurantId);
-        if (isNaN(restaurantId)) {
-            throw new Error("ID de restaurant invalide");
-        }
-
-        const timeslots = await prisma.timeslot.findMany({
-            where: {
-                restaurant_id: restaurantId,
-                status: 'AVAILABLE',
-                date: { gte: new Date() } // Seulement les futurs créneaux
-            },
-            orderBy: [
-                { date: 'asc' },
-                { start_at: 'asc' }
-            ]
-        });
-        
-        res.json(timeslots.map(formatTimeslot));
-    } catch (error) {
-        next(error);
+async getAvailable(req: Request, res: Response, next : NextFunction) {
+  try {
+    // Extraction correcte du restaurantId
+    const restaurantId = parseInt(req.params.restaurantId, 10);
+    
+    if (isNaN(restaurantId)) {
+      return res.status(400).json({ error: "ID restaurant invalide" });
     }
+
+    const timeslots = await prisma.timeslot.findMany({
+      where: {
+        restaurant_id: restaurantId,
+        status: 'AVAILABLE',
+        date: { gte: new Date() } // Créneaux futurs uniquement
+      },
+      orderBy: [
+        { date: 'asc' },
+        { start_at: 'asc' }
+      ]
+    });
+
+    res.json(timeslots.map(formatTimeslot));
+  } catch (error) {
+    next(error);
+  }
 },
 
   // PATCH /timeslots/:id

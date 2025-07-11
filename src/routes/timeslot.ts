@@ -17,11 +17,11 @@ router.get('/', (req, res, next) => {
     next();
 }, TimeslotController.getByRestaurant);
 
-// GET /api/timeslots/:id (conservé pour la cohérence)
-router.get('/:timeslotId', TimeslotController.getById); 
-
 // GET /api/timeslots/available/:restaurantId
 router.get('/available', TimeslotController.getAvailable);
+
+// GET /api/timeslots/:id (conservé pour la cohérence)
+router.get('/:timeslotId', TimeslotController.getById); 
 
 // PATCH /api/timeslots/:id
 router.patch('/:timeslotId', 
