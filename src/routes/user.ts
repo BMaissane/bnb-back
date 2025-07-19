@@ -9,6 +9,7 @@ import {
 } from '../controllers/userController';
 import { UpdateUserSchema } from '../interface/dto/userDto';
 import { validate } from '../middleware/validate';
+import { checkOwnership } from '../middleware/checkOwner';
 
 const router = Router();
 
@@ -22,13 +23,14 @@ router.get('/:id', authenticate, getUserById);
 // Dans user.ts (routes)
 router.put('/:id', 
   authenticate,
+  checkOwnership,
   validate(UpdateUserSchema),
   updateUser 
 );
 
 // DELETE /users/:id - Suppression & confirmation via mot de passe
 router.delete('/:id',
-  authenticate,
+  authenticate, checkOwnership,
   deleteUser
 );
 

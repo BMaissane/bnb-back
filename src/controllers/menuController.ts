@@ -11,7 +11,8 @@ export const menuController = {
 async createMenu(req: Request, res: Response, next: NextFunction) {
     try {
        const restaurantId = Number(req.params.restaurantId); // Récupération depuis l'URL
-    const validatedData = CreateMenuSchema.parse({
+   if (!req.user) throw new Error('Unauthorized');
+       const validatedData = CreateMenuSchema.parse({
       ...req.body,
       restaurantId // Injection dans le DTO
     });
@@ -116,6 +117,7 @@ async getMenubyId(req: Request, res: Response) {
   // DELETE api/restaurant/:id/menu/:id
   async deleteMenu(req: Request, res: Response, next: NextFunction) {
     try {
+         if (!req.user) throw new Error('Unauthorized');
       await MenuService.deleteMenu(Number(req.params.menuId));
       res.status(204).send();
     } catch (error) {

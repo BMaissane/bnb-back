@@ -1,34 +1,40 @@
-import { reservation } from "@prisma/client";
+import { CreateReservationInput, UpdateReservationInput } from '../dto/reservationDto';
 
-export interface ReservationInput {
+export interface ReservationDetails {
+  id: number;
   userId: number;
   restaurantId: number;
   timeslotId: number;
+  status: 'CONFIRMED' | 'CANCELED';
   specialRequests?: string;
-  items: {
-    itemId: number;
-    quantity: number;
-  }[];
-}
-
-export interface ReservationUpdateInput {
-  status?: 'CONFIRMED' | 'CANCELED';
-  specialRequests?: string;
-}
-
-export interface ReservationWithDetails extends reservation {
+  createdAt: Date;
+  updatedAt: Date;
+  user: {
+    firstName: string;
+    lastName?: string;
+    email: string;
+  };
   restaurant: {
     name: string;
     address?: string;
   };
   timeslot: {
     date: Date;
-    start_at: Date;
-    end_at: Date;
+    startAt: Date;
+    endAt: Date;
   };
   items: {
+    itemId: number;
     name: string;
     quantity: number;
-    item_price: number;
+    itemPrice: number;
   }[];
+}
+
+export interface ReservationServiceInterface {
+  create(data: CreateReservationInput): Promise<ReservationDetails>;
+  getById(id: number): Promise<ReservationDetails>;
+  updateStatus(id: number, status: 'CONFIRMED' | 'CANCELED'): Promise<ReservationDetails>;
+  getUserReservations(userId: number): Promise<ReservationDetails[]>;
+  getRestaurantReservations(restaurantId: number): Promise<ReservationDetails[]>;
 }

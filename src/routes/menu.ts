@@ -1,7 +1,8 @@
 import { Router } from 'express';
 import { menuController } from '../controllers/menuController';
-import { authenticate } from '../middleware/authMiddleware';
-import { checkOwner } from '../middleware/checkOwner';
+import { authenticate, authorize } from '../middleware/authMiddleware';
+import { checkOwnership } from '../middleware/checkOwner';
+
 
 const router = Router({ mergeParams: true });
 
@@ -13,9 +14,9 @@ router.get('/restaurants/:restaurantId/menus', menuController.getRestaurantMenus
 router.get('/restaurants/:restaurantId/menus/:menuId', menuController.getMenubyId);
 
 // Protected routes (require authentication)
-router.post('/', authenticate, menuController.createMenu);
-router.put('/:menuId', authenticate, menuController.updateMenu);
-router.delete('/:menuId', authenticate, menuController.deleteMenu);
+router.post('/', authenticate, authorize(['RESTAURANT_OWNER']), checkOwnership, menuController.createMenu);
+router.put('/:menuId', authenticate, authorize(['RESTAURANT_OWNER']), checkOwnership, menuController.updateMenu);
+router.delete('/:menuId', authenticate, authorize(['RESTAURANT_OWNER']), checkOwnership, menuController.deleteMenu);
 router.get('/', authenticate, menuController.getRestaurantMenus);
 
 export default router;

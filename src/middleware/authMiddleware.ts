@@ -1,6 +1,21 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { UserType } from '@prisma/client';
+import { UnauthorizedError, ForbiddenError } from './errors';
+
+
+interface AuthenticatedUser {
+  id: number;
+  type_user: UserType;
+}
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: AuthenticatedUser;
+    }
+  }
+}
 
 export const authenticate = async (
   req: Request,
@@ -9,12 +24,9 @@ export const authenticate = async (
 ) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
-    if (!token) throw new Error('Token missing');
+    if (!token) throw new UnauthorizedError('Token manquant');
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
-      id: number;
-      type_user: UserType;
-    };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as AuthenticatedUser;
 
     req.user = {
       id: decoded.id,
@@ -23,18 +35,14 @@ export const authenticate = async (
 
     next();
   } catch (error) {
-    next(error);
+    next(new UnauthorizedError('Token invalide ou expiré'));
   }
 };
 
 export const authorize = (allowedTypes: UserType[]) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    if (!req.user) {
-      return res.status(401).json({ message: 'Authentification requise' });
-    }
-    
-    if (!allowedTypes.includes(req.user.type_user)) {
-      return res.status(403).json({ message: 'Permissions insuffisantes' });
+    if (!allowedTypes.includes(req.user!.type_user)) {
+      return next(new ForbiddenError('Rôle insuffisant'));
     }
     next();
   };

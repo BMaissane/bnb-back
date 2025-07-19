@@ -1,70 +1,51 @@
 import { Router } from 'express';
-import { prisma } from '../prisma/client';
+import { UserType } from '@prisma/client';
+import { ReservationController } from '../controllers/reservationController';
+import { authenticate, authorize } from '../middleware/authMiddleware';
+import { validateCreateReservation } from '../middleware/validateReservation';
+import { ReservationService } from '../services/reservationService';
+import { checkOwnership } from '../middleware/checkOwner';
 
 const router = Router();
+const service = new ReservationService();
+const controller = new ReservationController(service);
 
-// GET /reservations – Récupérer toutes les réservations
-router.get('/', async (req, res) => {
-    try {
-        const reservations = await prisma.reservation.findMany({
-            include: {
-                user: true,
-                restaurant: true,
-                timeslot: true
-            }
-        });
-        res.json(reservations);
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Erreur serveur" });
-    }
-});
+// Middleware d'authentification global
+router.use(authenticate);
 
-// POST /reservations – Créer une réservation
-router.post('/', async (req, res) => {
-    try {
-        const { userId, restaurantId, timeslotId } = req.body;
+// CRUD des réservations
+router.post(
+  '/',
+  authorize([UserType.CLIENT]), // Seuls les clients peuvent créer
+  validateCreateReservation,
+  controller.create
+);
 
-        // Validation des données
-        if (!userId || !restaurantId || !timeslotId) {
-            return res.status(400).json({ error: "Données manquantes" });
-        }
+router.get(
+  '/:id',
+  checkOwnership({ model: 'reservation' }),
+  controller.getById
+);
 
-        // Vérifier la disponibilité du timeslot
-        const timeslot = await prisma.timeslot.findUnique({
-            where: { id: timeslotId },
-            select: { capacity: true }
-        });
+router.get(
+  '/user/:userId',
+  authorize([UserType.CLIENT, UserType.RESTAURANT_OWNER]), 
+  controller.getByUser
+);
 
-        if (!timeslot || timeslot.capacity <= 0) {
-            return res.status(400).json({ error: "Créneau indisponible" });
-        }
+router.patch(
+  '/:id/cancel',
+  checkOwnership({ model: 'reservation' }),
+  validateCreateReservation,
+  controller.cancel
+);
 
-        // Création de la réservation
-        const newReservation = await prisma.reservation.create({
-            data: { 
-                user_id: userId,
-                timeslot_id: timeslotId,
-                restaurant_id: restaurantId,
-                status: "CONFIRMED"
-            },
-            include: {
-                timeslot: true
-            }
-        });
-
-        // Mettre à jour la capacité
-        await prisma.timeslot.update({
-            where: { id: timeslotId },
-            data: { capacity: { decrement: 1 } }
-        });
-
-        res.status(201).json(newReservation);
-
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: "Erreur lors de la création" });
-    }
-});
+// // Seul le propriétaire peut voir les réservations de son restaurant
+// router.get(
+//   '/restaurant/:restaurantId',
+//   authorize([UserType.RESTAURANT_OWNER]),
+//   checkOwnership({ model: 'restaurant', idParam: 'restaurantId' }),
+//   controller.getByRestaurantId
+// );
 
 export default router;

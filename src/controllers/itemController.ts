@@ -16,6 +16,8 @@ export const ItemController = {
   // POST api/items
    async createItem(req: Request, res: Response, next : NextFunction) {
     try {
+
+      if (!req.user) throw new Error('Unauthorized');
       // Validation des données
       const validatedData = createItemSchema.parse(req.body);
       

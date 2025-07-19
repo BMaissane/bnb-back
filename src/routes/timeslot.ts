@@ -1,6 +1,7 @@
 import express, { Router } from 'express';
 import { TimeslotController } from '../controllers/timeslotController';
 import { authenticate, authorize } from '../middleware/authMiddleware';
+import { checkOwnership } from '../middleware/checkOwner';
 
 const router = express.Router({ mergeParams: true }); 
 
@@ -25,13 +26,13 @@ router.get('/:timeslotId', TimeslotController.getById);
 
 // PATCH /api/timeslots/:id
 router.patch('/:timeslotId', 
-  authenticate, authorize(['RESTAURANT_OWNER']), 
+  authenticate, authorize(['RESTAURANT_OWNER']), checkOwnership,
   TimeslotController.update);
 
 
 // DELETE /api/timeslots/:id
 router.delete('/:timeslotId', 
-  authenticate, authorize(['RESTAURANT_OWNER']),
+  authenticate, authorize(['RESTAURANT_OWNER']), checkOwnership,
    TimeslotController.delete);
 
 export default router;
