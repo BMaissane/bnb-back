@@ -100,6 +100,7 @@ model reservation {
   reservation_has_item reservation_has_item[]
 }
 
+// Table pour lister les item attachés à un reservationId
 model reservation_has_item {
   reservation_id Int
   item_id        Int
@@ -136,6 +137,7 @@ model restaurant {
   @@index([owner_id], map: "idx_restaurant_owner")
 }
 
+// Table pour le cas où un item est proposé par plusieurs restaurants (qui gérent leur prix et stock directement/manuellement)
 model restaurant_has_item {
   restaurant_id Int
   item_id       Int

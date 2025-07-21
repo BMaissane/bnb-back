@@ -26,13 +26,13 @@ router.get('/:timeslotId', TimeslotController.getById);
 
 // PATCH /api/timeslots/:id
 router.patch('/:timeslotId', 
-  authenticate, authorize(['RESTAURANT_OWNER']), checkOwnership,
+  authenticate, authorize(['RESTAURANT_OWNER']),
   TimeslotController.update);
 
 
 // DELETE /api/timeslots/:id
 router.delete('/:timeslotId', 
-  authenticate, authorize(['RESTAURANT_OWNER']), checkOwnership,
+  authenticate, authorize(['RESTAURANT_OWNER']), 
    TimeslotController.delete);
 
 export default router;

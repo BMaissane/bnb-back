@@ -16,26 +16,27 @@ router.use(authenticate);
 // CRUD des réservations
 router.post(
   '/',
-  authorize([UserType.CLIENT]), // Seuls les clients peuvent créer
+  authenticate,
   validateCreateReservation,
   controller.create
 );
 
 router.get(
   '/:id',
-  checkOwnership({ model: 'reservation' }),
+  authenticate,
   controller.getById
 );
 
 router.get(
   '/user/:userId',
+  authenticate,
   authorize([UserType.CLIENT, UserType.RESTAURANT_OWNER]), 
   controller.getByUser
 );
 
 router.patch(
   '/:id/cancel',
-  checkOwnership({ model: 'reservation' }),
+  authenticate,
   validateCreateReservation,
   controller.cancel
 );

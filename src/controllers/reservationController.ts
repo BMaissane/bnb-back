@@ -3,18 +3,17 @@ import { ReservationService } from '../services/reservationService';
 import { UpdateReservationInput } from '../interface/dto/reservationDto';
 
 
-export class ReservationController {
-  constructor(private readonly reservationService: ReservationService) {}
+export const ReservationController = {
 
-  async create(req: Request, res: Response, next : NextFunction) {
+  async create(req: Request, res: Response) {
     try {
-      // req.body est déjà validé par le middleware Zod
-      const reservation = await this.reservationService.create(req.body);
+      // La validation a déjà été faite par le middleware Zod
+      const reservation = await ReservationService.create(req.body);
       res.status(201).json(reservation);
     } catch (error) {
-    next(error);
+      res.status(400).json({ message: error.message });
     }
-  }
+  },
 
     async getById(req: Request, res: Response, next : NextFunction) {
     try {
