@@ -7,8 +7,7 @@ import { ReservationService } from '../services/reservationService';
 import { checkOwnership } from '../middleware/checkOwner';
 
 const router = Router();
-const service = new ReservationService();
-const controller = new ReservationController(service);
+
 
 // Middleware d'authentification global
 router.use(authenticate);
@@ -18,26 +17,28 @@ router.post(
   '/',
   authorize([UserType.CLIENT]), // Seuls les clients peuvent créer
   validateCreateReservation,
-  controller.create
+  ReservationController.create
 );
 
 router.get(
   '/:id',
-  checkOwnership({ model: 'reservation' }),
-  controller.getById
+  authenticate,
+  ReservationController.getById
 );
 
 router.get(
   '/user/:userId',
-  authorize([UserType.CLIENT, UserType.RESTAURANT_OWNER]), 
-  controller.getByUser
+  authenticate,
+//  authorize([UserType.CLIENT, UserType.RESTAURANT_OWNER]), 
+  ReservationController.getByUser
 );
 
 router.patch(
   '/:id/cancel',
-  checkOwnership({ model: 'reservation' }),
+  authenticate,
+//  checkOwnership({ model: 'reservation' }),
   validateCreateReservation,
-  controller.cancel
+  ReservationController.cancel
 );
 
 // // Seul le propriétaire peut voir les réservations de son restaurant
