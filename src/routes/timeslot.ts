@@ -2,37 +2,36 @@ import express, { Router } from 'express';
 import { TimeslotController } from '../controllers/timeslotController';
 import { authenticate, authorize } from '../middleware/authMiddleware';
 import { checkOwnership } from '../middleware/checkOwner';
+import { validateTimeslotDates } from '../middleware/timeslotValidation';
 
-const router = express.Router({ mergeParams: true }); 
+const router = express.Router({ mergeParams: true });
 
-// POST /api/restaurants/:id/timeslots
-router.post('/', 
-  authenticate, 
-  authorize(['RESTAURANT_OWNER']), 
-  TimeslotController.createTimeslot
-);
+router.get('/available/:restaurantId', TimeslotController.getAvailable);
 
-// GET /api/restaurants/:id/timeslots
+// 2. Route générale GET /timeslots
 router.get('/', (req, res, next) => {
-    console.log('Params in router middleware:', req.params); // Debug
+    console.log('Params:', req.params);
     next();
 }, TimeslotController.getByRestaurant);
 
-// GET /api/timeslots/available/:restaurantId
-router.get('/available', TimeslotController.getAvailable);
-
-// GET /api/timeslots/:id (conservé pour la cohérence)
-router.get('/:timeslotId', TimeslotController.getById); 
-
-// PATCH /api/timeslots/:id
+// 3. Toutes les autres routes avec paramètres
+router.get('/:timeslotId', TimeslotController.getById);
 router.patch('/:timeslotId', 
-  authenticate, authorize(['RESTAURANT_OWNER']), checkOwnership,
+  authenticate,
+  authorize(['RESTAURANT_OWNER']),
+  validateTimeslotDates,
   TimeslotController.update);
 
+router.delete('/:timeslotId',
+  authenticate,
+  authorize(['RESTAURANT_OWNER']),
+  TimeslotController.delete);
 
-// DELETE /api/timeslots/:id
-router.delete('/:timeslotId', 
-  authenticate, authorize(['RESTAURANT_OWNER']), checkOwnership,
-   TimeslotController.delete);
+// 4. Route POST à la fin
+router.post('/',
+  authenticate,
+  authorize(['RESTAURANT_OWNER']),
+  validateTimeslotDates,
+  TimeslotController.createTimeslot);
 
 export default router;

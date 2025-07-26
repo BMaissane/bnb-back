@@ -1,40 +1,42 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, ReservationStatus } from '@prisma/client';
 import { CreateReservationInput, UpdateReservationInput } from '../interface/dto/reservationDto';
-import { ReservationDetails } from '../interface/request/reservation.interface';
 import { NotFoundError, ForbiddenError, BusinessRuleError } from '../middleware/errors';
+import { ReservationDetails } from '../interface/request/reservation.interface';
+import { Decimal } from '@prisma/client/runtime/library';
 
 const prisma = new PrismaClient();
 
-const mapToDetails = (reservation: any): ReservationDetails => {
+const mapToDetails = (reservation: {
+  id: number;
+  status: ReservationStatus;
+  special_requests?: string | null;
+  timeslot: {
+    start_at: Date;
+    end_at: Date;
+  };
+  reservation_has_item?: {
+    item_id: number;
+    quantity: number;
+    item_price: Decimal;
+    item: {
+      name: string;
+    };
+  }[];
+}): ReservationDetails => {
   return {
     id: reservation.id,
-    userId: reservation.user_id,
-    restaurantId: reservation.restaurant_id,
-    timeslotId: reservation.timeslot_id,
     status: reservation.status,
-    specialRequests: reservation.special_requests,
-    createdAt: reservation.created_at,
-    updatedAt: reservation.updated_at,
-    user: {
-      firstName: reservation.user.first_name,
-      lastName: reservation.user.last_name,
-      email: reservation.user.email,
-    },
-    restaurant: {
-      name: reservation.restaurant.name,
-      address: reservation.restaurant.address,
-    },
+    specialRequests: reservation.special_requests || undefined,
     timeslot: {
-      date: reservation.timeslot.date,
       startAt: reservation.timeslot.start_at,
-      endAt: reservation.timeslot.end_at,
+      endAt: reservation.timeslot.end_at
     },
-    items: reservation.reservation_has_item.map((item: any) => ({
+    items: reservation.reservation_has_item?.map(item => ({
       itemId: item.item_id,
       name: item.item.name,
       quantity: item.quantity,
-      itemPrice: item.item_price,
-    })),
+      price: Number(item.item_price) // Conversion cruciale ici
+    }))
   };
 };
 
@@ -101,31 +103,35 @@ export const ReservationService = {
     });
   },
 
-  async getById(id: number, userId: number): Promise<ReservationDetails> {
-    const reservation = await prisma.reservation.findUnique({
-      where: { id },
-      include: {
-        user: true,
-        restaurant: true,
-        timeslot: true,
-        reservation_has_item: { include: { item: true } },
+// Exemple dans getById
+async getById(id: number): Promise<ReservationDetails> {
+  const reservation = await prisma.reservation.findUnique({
+    where: { id },
+    include: {
+      timeslot: {
+        select: {
+          start_at: true,
+          end_at: true
+        }
       },
-    });
-
-    if (!reservation) {
-      throw new NotFoundError('Réservation non trouvée');
+      reservation_has_item: {
+        select: {
+          item_id: true,
+          quantity: true,
+          item_price: true,
+          item: {
+            select: {
+              name: true
+            }
+          }
+        }
+      }
     }
+  });
 
-    // Vérification des droits
-    const isOwner = reservation.user_id === userId;
-    const isRestaurantOwner = reservation.restaurant.owner_id === userId;
-
-    if (!isOwner && !isRestaurantOwner) {
-      throw new ForbiddenError('Vous n\'avez pas accès à cette réservation');
-    }
-
-    return mapToDetails(reservation);
-  },
+  if (!reservation) throw new NotFoundError('Réservation non trouvée');
+  return mapToDetails(reservation);
+},
 
   async getByUserId(userId: number): Promise<ReservationDetails[]> {
     const reservations = await prisma.reservation.findMany({
@@ -142,89 +148,213 @@ export const ReservationService = {
     return reservations.map(mapToDetails);
   },
 
-  async update(
-    id: number,
-    userId: number,
-    data: UpdateReservationInput
-  ): Promise<ReservationDetails> {
-    return await prisma.$transaction(async (tx) => {
-      const existing = await tx.reservation.findUnique({
-        where: { id },
-        include: { restaurant: true },
-      });
-
-      if (!existing) {
-        throw new NotFoundError('Réservation non trouvée');
-      }
-
-      // Seul le client ou le propriétaire peut modifier
-      const isOwner = existing.user_id === userId;
-      const isRestaurantOwner = existing.restaurant.owner_id === userId;
-
-      if (!isOwner && !isRestaurantOwner) {
-        throw new ForbiddenError('Non autorisé à modifier cette réservation');
-      }
-
-      // Seul le client peut modifier les items/demandes spéciales
-      if (data.specialRequests && !isOwner) {
-        throw new ForbiddenError('Seul le client peut modifier les demandes spéciales');
-      }
-
-      const updated = await tx.reservation.update({
-        where: { id },
-        data: {
-          status: data.status,
-          special_requests: data.specialRequests,
+  async getByRestaurantId(restaurantId: number): Promise<ReservationDetails[]> {
+  return await prisma.$transaction(async (tx) => {
+    const reservations = await tx.reservation.findMany({
+      where: { restaurant_id: restaurantId },
+      include: {
+        timeslot: {
+          select: {
+            start_at: true,
+            end_at: true
+          }
         },
-        include: {
-          user: true,
-          restaurant: true,
-          timeslot: true,
-          reservation_has_item: { include: { item: true } },
+        reservation_has_item: {
+          select: {
+            item_id: true,
+            quantity: true,
+            item_price: true,
+            item: {
+              select: {
+                name: true
+              }
+            }
+          }
         },
-      });
-
-      return mapToDetails(updated);
+        user: {
+          select: {
+            id: true,
+            first_name: true,
+            email: true
+          }
+        }
+      },
+      orderBy: { created_at: 'desc' },
     });
-  },
 
-  async cancel(id: number, userId: number, reason?: string): Promise<ReservationDetails> {
-    return await prisma.$transaction(async (tx) => {
-      const reservation = await tx.reservation.findUnique({
-        where: { id },
-        include: { timeslot: true, restaurant: true },
-      });
-
-      if (!reservation) throw new NotFoundError('Réservation non trouvée');
-
-      // Vérification des droits
-      const canCancel = reservation.user_id === userId || 
-                      reservation.restaurant.owner_id === userId;
-      if (!canCancel) throw new ForbiddenError('Action non autorisée');
-
-      // Vérification des 24h
-      const isCancellable = new Date() < new Date(reservation.timeslot.start_at.getTime() - 24 * 3600 * 1000);
-      if (!isCancellable) {
-        throw new BusinessRuleError('Annulation impossible moins de 24h à l\'avance. Contactez le restaurant.');
+    return reservations.map(reservation => ({
+      id: reservation.id,
+      status: reservation.status,
+      specialRequests: reservation.special_requests || undefined,
+      timeslot: {
+        startAt: reservation.timeslot.start_at,
+        endAt: reservation.timeslot.end_at
+      },
+      items: reservation.reservation_has_item.map(item => ({
+        itemId: item.item_id,
+        name: item.item.name,
+        quantity: item.quantity,
+        price: Number(item.item_price)
+      })),
+      user: {
+        id: reservation.user.id,
+        firstName: reservation.user.first_name,
+        email: reservation.user.email
       }
+    }));
+  });
+},
 
-      // Mise à jour
-      const updated = await tx.reservation.update({
+async update(
+  id: number, 
+  data: { 
+    specialRequests?: string; 
+    status?: ReservationStatus 
+  }
+): Promise<ReservationDetails> {
+  return await prisma.$transaction(async (tx) => {
+    // 1. Vérifie que la réservation existe
+    const existing = await tx.reservation.findUnique({
+      where: { id },
+      include: {
+        timeslot: {
+          select: {
+            start_at: true,
+            end_at: true
+          }
+        }
+      }
+    });
+
+    if (!existing) {
+      throw new NotFoundError('Réservation non trouvée');
+    }
+
+    // 2. Met à jour la réservation avec TOUS les champs requis
+    const updated = await tx.reservation.update({
+      where: { id },
+      data: {
+        special_requests: data.specialRequests,
+        status: data.status
+      },
+      include: {
+        timeslot: {
+          select: {
+            start_at: true,
+            end_at: true
+          }
+        },
+        reservation_has_item: {
+          include: {
+            item: {
+              select: {
+                name: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // 3. Retourne les données formatées
+    return {
+      id: updated.id,
+      status: updated.status,
+      specialRequests: updated.special_requests || undefined,
+      timeslot: {
+        startAt: updated.timeslot.start_at,
+        endAt: updated.timeslot.end_at
+      },
+      items: updated.reservation_has_item?.map(item => ({
+        itemId: item.item_id,
+        name: item.item.name,
+        quantity: item.quantity,
+        price: Number(item.item_price)
+      }))
+    };
+  });
+},
+
+async cancel(id: number, reason?: string): Promise<ReservationDetails> {
+  return await prisma.$transaction(async (tx) => {
+    // 1. Récupération complète avec les items
+    const reservation = await tx.reservation.findUnique({
+      where: { id },
+      include: {
+        timeslot: {
+          select: {
+            start_at: true,
+            end_at: true
+          }
+        },
+        reservation_has_item: {
+          include: {
+            item: {
+              select: {
+                name: true
+              }
+            }
+          }
+        }
+      }
+    });
+
+    if (!reservation) throw new NotFoundError('Réservation non trouvée');
+
+    // 2. Vérification du délai d'annulation
+    const deadline = new Date(reservation.timeslot.start_at.getTime() - 24 * 3600 * 1000);
+    if (new Date() > deadline) {
+      throw new BusinessRuleError('Annulation impossible <24h avant');
+    }
+
+    // 3. Mise à jour et recréation du stock
+    const [updated] = await Promise.all([
+      tx.reservation.update({
         where: { id },
         data: {
           status: 'CANCELED',
-          special_requests: reason ? `[ANNULÉ] ${reason}` : reservation.special_requests,
-          timeslot: { update: { status: 'AVAILABLE' } }
+          special_requests: reason ? `[ANNULÉ] ${reason}` : undefined
         },
         include: {
-          user: true,
-          restaurant: true,
-          timeslot: true,
-          reservation_has_item: { include: { item: true } },
-        },
-      });
+          timeslot: {
+            select: {
+              start_at: true,
+              end_at: true
+            }
+          },
+          reservation_has_item: {
+            include: {
+              item: {
+                select: {
+                  name: true
+                }
+              }
+            }
+          }
+        }
+      }),
+      
+      // Recréation du stock pour chaque item
+      ...reservation.reservation_has_item.map(item =>
+        tx.restaurant_has_item.updateMany({
+          where: {
+            item_id: item.item_id,
+            restaurant_id: reservation.restaurant_id
+          },
+          data: {
+            stock: { increment: item.quantity }
+          }
+        })
+      ),
+      
+      // Libération du timeslot
+      tx.timeslot.update({
+        where: { id: reservation.timeslot_id },
+        data: { status: 'AVAILABLE' }
+      })
+    ]);
 
-      return mapToDetails(updated);
-    });
-  }
+    return mapToDetails(updated);
+  });
+}
 };

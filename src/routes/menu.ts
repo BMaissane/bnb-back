@@ -14,9 +14,9 @@ router.get('/restaurants/:restaurantId/menus', menuController.getRestaurantMenus
 router.get('/restaurants/:restaurantId/menus/:menuId', menuController.getMenubyId);
 
 // Protected routes (require authentication)
-router.post('/', authenticate, authorize(['RESTAURANT_OWNER']), checkOwnership, menuController.createMenu);
-router.put('/:menuId', authenticate, authorize(['RESTAURANT_OWNER']), checkOwnership, menuController.updateMenu);
-router.delete('/:menuId', authenticate, authorize(['RESTAURANT_OWNER']), checkOwnership, menuController.deleteMenu);
+router.post('/', authenticate, authorize(['RESTAURANT_OWNER']), menuController.createMenu);
+router.put('/:menuId', authenticate, authorize(['RESTAURANT_OWNER']), menuController.updateMenu);
+router.delete('/:menuId', authenticate, authorize(['RESTAURANT_OWNER']), menuController.deleteMenu);
 router.get('/', authenticate, menuController.getRestaurantMenus);
 
 export default router;

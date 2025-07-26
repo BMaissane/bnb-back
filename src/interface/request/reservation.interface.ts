@@ -1,33 +1,19 @@
+import { ReservationStatus } from '@prisma/client';
 import { CreateReservationInput, UpdateReservationInput } from '../dto/reservationDto';
 
 export interface ReservationDetails {
   id: number;
-  userId: number;
-  restaurantId: number;
-  timeslotId: number;
-  status: 'CONFIRMED' | 'CANCELED';
+  status: ReservationStatus;
   specialRequests?: string;
-  createdAt: Date;
-  updatedAt: Date;
-  user: {
-    firstName: string;
-    lastName?: string;
-    email: string;
-  };
-  restaurant: {
-    name: string;
-    address?: string;
-  };
   timeslot: {
-    date: Date;
     startAt: Date;
     endAt: Date;
   };
-  items: {
+  items?: {
     itemId: number;
     name: string;
     quantity: number;
-    itemPrice: number;
+    price: number; // Conversion explicite de Decimal -> number
   }[];
 }
 

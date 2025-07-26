@@ -8,27 +8,28 @@ export const TimeslotController = {
   // POST /timeslots
 async createTimeslot(req: Request, res: Response, next: NextFunction) {
   try {
+    // Vérification unique et explicite
     if (!req.user) throw new Error('Unauthorized');
-
-    // Validation basique du body
+    
+    // Validation des données
     if (!req.body.date || !req.body.start_at || !req.body.end_at) {
-      throw new Error('Tous les champs sont requis');
+      throw new Error('Missing required fields');
     }
 
-    const newTimeslot = await TimeslotService.createTimeslot(
-      Number(req.body.restaurant_id),
-      req.user.id,
+    const result = await TimeslotService.createTimeslot(
+      Number(req.params.restaurantId),
+      req.user.id, // On passe quand même l'ID pour le service
       {
         date: req.body.date,
         start_at: req.body.start_at,
         end_at: req.body.end_at,
-        capacity: Number(req.body.capacity)
+        capacity: Number(req.body.capacity) || 10 // Valeur par défaut
       }
     );
 
-    res.status(201).json(newTimeslot);
+    res.status(201).json(formatTimeslot(result));
   } catch (error) {
-    next(error);
+    next(error); // Gestion centralisée des erreurs
   }
 },
 
@@ -76,29 +77,34 @@ async getById(req: Request, res: Response, next: NextFunction) {
 },
 
 // GET /timeslots/available/:restaurantId
-async getAvailable(req: Request, res: Response, next : NextFunction) {
+async getAvailable(req: Request, res: Response, next: NextFunction) {
   try {
-    // Extraction correcte du restaurantId
-    const restaurantId = parseInt(req.params.restaurantId, 10);
+    console.log('Reçu params:', req.params); // Debug crucial
     
+    const restaurantId = parseInt(req.params.restaurantId);
     if (isNaN(restaurantId)) {
-      return res.status(400).json({ error: "ID restaurant invalide" });
+      return res.status(400).json({
+        error: "INVALID_ID",
+        message: "L'ID du restaurant doit être un nombre"
+      });
     }
 
-    const timeslots = await prisma.timeslot.findMany({
+    const availableSlots = await prisma.timeslot.findMany({
       where: {
         restaurant_id: restaurantId,
         status: 'AVAILABLE',
-        date: { gte: new Date() } // Créneaux futurs uniquement
+        start_at: { gte: new Date() }
       },
-      orderBy: [
-        { date: 'asc' },
-        { start_at: 'asc' }
-      ]
+      orderBy: { start_at: 'asc' }
     });
 
-    res.json(timeslots.map(formatTimeslot));
+    if (!availableSlots.length) {
+      return res.status(200).json([]); // Retourne tableau vide plutôt que 404
+    }
+
+    res.json(availableSlots.map(formatTimeslot));
   } catch (error) {
+    console.error('Erreur complète:', error);
     next(error);
   }
 },

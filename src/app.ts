@@ -18,13 +18,13 @@ import restaurantRouter from './routes/restaurant';
 
 const app = express();
 const port = process.env.PORT || 3600;
+app.use(express.json());
 
 // 1. Middlewares de sécurité
 app.use(helmet());
 app.use(corsMiddleware);
 
 // 2. Body parsing (version simplifiée)
-app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // 3. Logging des requêtes (version corrigée)
@@ -48,7 +48,7 @@ const restaurantParentRouter = express.Router({ mergeParams: true });
 app.use('/api/restaurants/:restaurantId', restaurantParentRouter); // :restaurantId dynamique
 restaurantParentRouter.use('/timeslots', timeslotRouter); // Route imbriquée
 
-app.use('/api/restaurants', restaurantRouter); // Route restaurant standard
+app.use('/api/restaurants', restaurantRouter); 
 app.use('/api/auth', authRouter);
 app.use('/api/users', userRouter);
 app.use('/api/reservations', reservationsRouter);
@@ -59,7 +59,7 @@ app.use('/api/test', testRoutes);
 
 // 6. Route racine
 app.get('/', (req, res) => {
-  res.send('API BookWhite');
+  res.send('API BookNBite');
 });
 
 // 7. Gestion des erreurs

@@ -1,7 +1,5 @@
 import { PrismaClient, TimeslotStatus } from '@prisma/client';
-import { UserType } from '@prisma/client';
-import { NextFunction } from 'express';
-
+import { Request, Response, NextFunction } from 'express';
 
 const prisma = new PrismaClient();
 
@@ -16,56 +14,39 @@ interface TimeslotRequestBody {
   [key: string]: any;
 }
 
-// Middleware validation date
 export const validateTimeslotDates = (req: Request, res: Response, next: NextFunction) => {
-  try {
-    if (['POST', 'PATCH', 'PUT'].includes(req.method)) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      const body = req.body as TimeslotRequestBody;
+  if (['POST', 'PATCH', 'PUT'].includes(req.method)) {
+    try {
+      const now = new Date();
       
-      if (body?.date) {
-        // Conversion en Date si c'est une string
-        const dateValue = typeof body.date === 'string' ? new Date(body.date) : body.date;
-        
-        if (dateValue < today) {
-          body.status = TimeslotStatus.UNAVAILABLE;
+      // Validation pour la création (POST)
+      if (req.body.date) {
+        const slotDate = new Date(req.body.date);
+        if (slotDate < now) {
+          return res.status(400).json({
+            error: 'DATE_PAST',
+            message: 'La date du créneau ne peut pas être dans le passé'
+          });
         }
       }
+
+      // Validation pour la modification (PATCH/PUT)
+      if (req.body.start_at) {
+        const slotDateTime = new Date(req.body.start_at);
+        if (slotDateTime < now) {
+          return res.status(400).json({
+            error: 'START_TIME_PAST',
+            message: 'L\'heure de début ne peut pas être dans le passé'
+          });
+        }
+      }
+
+    } catch (error) {
+      return res.status(400).json({
+        error: 'INVALID_DATE_FORMAT',
+        message: 'Format de date/heure invalide'
+      });
     }
-    next();
-  } catch (error) {
-    next(error);
   }
+  next();
 };
-
-// Appel Prisma client-extension query
-const timeslotValidationExtension = prisma.$extends({
-  name: 'timeslotValidation',
-  query: {
-    timeslot: {
-      async create({ args, query }) {
-        const now = new Date()
-        
-        // Validation des dates
-        if (new Date(args.data.date) < now) {
-          throw new Error('Cannot create timeslot with past date')
-        }
-        
-        // Reconstruction des DateTime complets
-        args.data.start_at = new Date(
-          `${args.data.date.toString().split('T')[0]}T${args.data.start_at.toString().split('T')[1]}`
-        )
-        args.data.end_at = new Date(
-          `${args.data.date.toString().split('T')[0]}T${args.data.end_at.toString().split('T')[1]}`
-        )
-        
-        return query(args)
-      }
-    }
-  }
-});
-
-// Exportez le client étendu au lieu du client de base
-export const validatedPrisma = timeslotValidationExtension;

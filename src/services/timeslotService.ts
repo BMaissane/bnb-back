@@ -50,27 +50,47 @@ function prepareDateTimeUpdates(
 export const TimeslotService = {
 
   // POST /timeslots
+// Dans TimeslotService.createTimeslot
 async createTimeslot(restaurantId: number, userId: number, data: {
   date: string | Date;
-  start_at: string; // Format "HH:MM"
-  end_at: string;   // Format "HH:MM"
+  start_at: string;
+  end_at: string;
   capacity: number;
 }) {
-  // Construction des dates complètes
-  const dateStr = new Date(data.date).toISOString().split('T')[0]
-  const startAt = new Date(`${dateStr}T${data.start_at}:00`)
-  const endAt = new Date(`${dateStr}T${data.end_at}:00`)
+  const now = new Date();
+  const startAt = new Date(`${data.date}T${data.start_at}`);
+  const endAt = new Date(`${data.date}T${data.end_at}`);
 
-  return await prisma.timeslot.create({
-    data: {
-      restaurant_id: restaurantId,
-      date: new Date(dateStr),
-      start_at: startAt,
-      end_at: endAt,
-      capacity: data.capacity,
-      status: 'AVAILABLE'
+  // Validation temporelle stricte
+  if (startAt < now) {
+    throw new Error('TIMESLOT_IN_PAST');
+  }
+
+  // Validation cohérence créneau
+  if (startAt >= endAt) {
+    throw new Error('INVALID_TIME_RANGE');
+  }
+
+  return await prisma.$transaction(async (tx) => {
+    const timeslot = await tx.timeslot.create({
+      data: {
+        restaurant_id: restaurantId,
+        date: new Date(data.date),
+        start_at: startAt,
+        end_at: endAt,
+        capacity: data.capacity,
+        status: 'AVAILABLE'
+      }
+    });
+
+    // Double vérification après création
+    if (new Date(timeslot.start_at) < new Date()) {
+      await tx.timeslot.delete({ where: { id: timeslot.id } });
+      throw new Error('TIMESLOT_IN_PAST_AFTER_CREATION');
     }
-  })
+
+    return timeslot;
+  });
 },
 
 // GET BY RESTAURANT_ID

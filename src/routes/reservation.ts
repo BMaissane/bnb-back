@@ -28,25 +28,28 @@ router.get(
 
 router.get(
   '/user/:userId',
-  authenticate,
-//  authorize([UserType.CLIENT, UserType.RESTAURANT_OWNER]), 
+  authorize([UserType.CLIENT, UserType.RESTAURANT_OWNER]),
   ReservationController.getByUser
 );
 
+// Mettre à jour une réservation (statut OU informations)
+router.patch(
+  '/:id',
+  ReservationController.update
+);
+
+// Annuler une réservation (version alternative)
 router.patch(
   '/:id/cancel',
-  authenticate,
-//  checkOwnership({ model: 'reservation' }),
-  validateCreateReservation,
   ReservationController.cancel
 );
 
-// // Seul le propriétaire peut voir les réservations de son restaurant
-// router.get(
-//   '/restaurant/:restaurantId',
-//   authorize([UserType.RESTAURANT_OWNER]),
-//   checkOwnership({ model: 'restaurant', idParam: 'restaurantId' }),
-//   controller.getByRestaurantId
-// );
+
+// Seul le propriétaire peut voir les réservations de son restaurant
+router.get(
+  '/restaurant/:restaurantId',
+  //authorize([UserType.RESTAURANT_OWNER]),
+  ReservationController.getByRestaurant
+);
 
 export default router;
