@@ -23,14 +23,14 @@ router.get('/:id', authenticate, getUserById);
 // Dans user.ts (routes)
 router.put('/:id', 
   authenticate,
-  checkOwnership,
-  validate(UpdateUserSchema),
+  // checkOwnership,
+  //validate(UpdateUserSchema),
   updateUser 
 );
 
 // DELETE /users/:id - Suppression & confirmation via mot de passe
 router.delete('/:id',
-  authenticate, checkOwnership,
+  authenticate, //checkOwnership,
   deleteUser
 );
 

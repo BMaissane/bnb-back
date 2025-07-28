@@ -6,7 +6,8 @@ import { validateTimeslotDates } from '../middleware/timeslotValidation';
 
 const router = express.Router({ mergeParams: true });
 
-router.get('/available/:restaurantId', TimeslotController.getAvailable);
+// Route pour les timeslots disponibles
+router.get('/available', TimeslotController.getAvailable);
 
 // 2. Route générale GET /timeslots
 router.get('/', (req, res, next) => {

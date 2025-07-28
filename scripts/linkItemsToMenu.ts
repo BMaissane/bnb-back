@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 async function linkExistingItemsToMenu() {
   const RESTAURANT_ID = 1;
-  const MENU_ID = 1;
+  const MENU_ID = 3;
 
   // 1. Vérifier que le menu appartient bien au restaurant
   const menu = await prisma.menu.findUnique({

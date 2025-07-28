@@ -13,13 +13,12 @@ restaurantRouter.get('/:id', RestaurantController.getById);
 // Protected routes (require authentication)
 restaurantRouter.post(
   '/',
-  authenticate, // vérifie que l'user est bien authentifié
+  authenticate, 
   authorize(['RESTAURANT_OWNER']),
-  checkOwnership, // vérfie le type d'user (client forbidden while restaurant_owner OK)
   RestaurantController.create
 );
 restaurantRouter.get('/owner/:ownerId', authenticate, RestaurantController.getRestaurantsByOwner);
-restaurantRouter.patch('/:id', authenticate, authorize(['RESTAURANT_OWNER']), checkOwnership, RestaurantController.update);
-restaurantRouter.delete('/:id', authenticate, authorize(['RESTAURANT_OWNER']), checkOwnership, RestaurantController.delete);
+restaurantRouter.patch('/:id', authenticate, authorize(['RESTAURANT_OWNER']), checkOwnership('restaurant'), RestaurantController.update);
+restaurantRouter.delete('/:id', authenticate, authorize(['RESTAURANT_OWNER']), checkOwnership('restaurant'), RestaurantController.delete);
 
 export default restaurantRouter;

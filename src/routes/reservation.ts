@@ -35,6 +35,7 @@ router.get(
 // Mettre à jour une réservation (statut OU informations)
 router.patch(
   '/:id',
+  authorize(['CLIENT']),
   ReservationController.update
 );
 

@@ -10,6 +10,6 @@ itemRouter.post('/',
     authenticate, authorize(['RESTAURANT_OWNER']), ItemController.createItem);
 itemRouter.get('/:id', ItemController.getItemById);
 itemRouter.patch('/:id', authenticate, authorize(['RESTAURANT_OWNER']), ItemController.updateItem);
-itemRouter.delete('/:id', authenticate, authorize(['RESTAURANT_OWNER']), checkOwnership, ItemController.deleteItem);
+itemRouter.delete('/:id', authenticate, authorize(['RESTAURANT_OWNER']), ItemController.deleteItem);
 
 export default itemRouter;

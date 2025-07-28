@@ -78,36 +78,20 @@ async getById(req: Request, res: Response, next: NextFunction) {
 
 // GET /timeslots/available/:restaurantId
 async getAvailable(req: Request, res: Response, next: NextFunction) {
-  try {
-    console.log('Reçu params:', req.params); // Debug crucial
-    
-    const restaurantId = parseInt(req.params.restaurantId);
-    if (isNaN(restaurantId)) {
-      return res.status(400).json({
-        error: "INVALID_ID",
-        message: "L'ID du restaurant doit être un nombre"
-      });
+    try {
+      const restaurantId = Number(req.params.restaurantId);
+      
+      if (!restaurantId) {
+        return res.status(400).json({ error: "ID restaurant requis" });
+      }
+
+      const timeslots = await TimeslotService.getAvailableTimeslots(restaurantId);
+      res.json(timeslots);
+
+    } catch (error) {
+      next(error); // Transmet à votre errorHandler existant
     }
-
-    const availableSlots = await prisma.timeslot.findMany({
-      where: {
-        restaurant_id: restaurantId,
-        status: 'AVAILABLE',
-        start_at: { gte: new Date() }
-      },
-      orderBy: { start_at: 'asc' }
-    });
-
-    if (!availableSlots.length) {
-      return res.status(200).json([]); // Retourne tableau vide plutôt que 404
-    }
-
-    res.json(availableSlots.map(formatTimeslot));
-  } catch (error) {
-    console.error('Erreur complète:', error);
-    next(error);
-  }
-},
+  },
 
   // PATCH /timeslots/:id
 async update(req: Request, res: Response, next : NextFunction) {

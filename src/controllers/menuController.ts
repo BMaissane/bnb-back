@@ -61,10 +61,12 @@ async getMenusByRestaurant(req: Request, res: Response, next: NextFunction) {
 },
 
   // GET /api/restaurants/:id/menus/:id
-async getMenuById(req: Request, res: Response) {
+async getMenuById(req: Request, res: Response, next: NextFunction) {
   try {
     const menuId = Number(req.params.id);
-    if (isNaN(menuId)) return res.status(400).json({ error: "ID invalide" });
+    if (isNaN(menuId)) {
+      throw new NotFoundError("ID de menu invalide"); // Utilisez BadRequestError au lieu de NotFoundError
+    }
 
     const menu = await prisma.menu.findUnique({
       where: { id: menuId },
@@ -83,12 +85,13 @@ async getMenuById(req: Request, res: Response) {
       }
     });
 
-        if (isNaN(menuId)) {
-      throw new NotFoundError("ID de menu invalide");
-    };
+    if (!menu) {
+      throw new NotFoundError("Menu non trouvé"); // C'est ici qu'il faut vérifier
+    }
+
+    res.json(menu);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ error: "Erreur serveur" });
+    next(error);
   }
 },
 

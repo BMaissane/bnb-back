@@ -1,4 +1,5 @@
 import { PrismaClient, timeslot, TimeslotStatus } from '@prisma/client';
+import { NotFoundError } from '../middleware/errors';
 
 const prisma = new PrismaClient();
 
@@ -136,18 +137,20 @@ async getRestaurantTimeslots(restaurantId: number, filters?: {
   },
 
   // GET ONLY AVAIABLE TIMESLOTS
-   async getAvailableTimeslots(restaurantId: number, filters?: { date?: string }) {
-    return await prisma.timeslot.findMany({
+  async getAvailableTimeslots(restaurantId: number) {
+    const timeslots = await prisma.timeslot.findMany({
       where: {
         restaurant_id: restaurantId,
-        status: 'AVAILABLE',
-        ...(filters?.date && { date: new Date(filters.date) })
+        status: 'AVAILABLE'
       },
-      orderBy: [
-        { date: 'asc' },
-        { start_at: 'asc' }
-      ]
-    }).then(timeslots => timeslots.map(formatTimeslot));
+      orderBy: { start_at: 'asc' }
+    });
+
+    if (timeslots.length === 0) {
+      throw new NotFoundError('Aucun créneau disponible trouvé');
+    }
+
+    return timeslots;
   },
 
   // PATCH/UPDATE
