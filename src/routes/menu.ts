@@ -1,22 +1,35 @@
-import { Router } from 'express';
+import express from 'express';
 import { menuController } from '../controllers/menuController';
 import { authenticate, authorize } from '../middleware/authMiddleware';
-import { checkOwnership } from '../middleware/checkOwner';
+import prisma from '../prisma/client';
 
 
-const router = Router({ mergeParams: true });
+const router = express.Router();
 
-// Public routes
-// GET /api/restaurants/:restaurantId/menus
-router.get('/restaurants/:restaurantId/menus', menuController.getRestaurantMenus);
+// Routes publiques
+router.get('/:id', menuController.getMenuById); // GET /api/menu/10
+router.get('/restaurants/:id/menus', menuController.getMenusByRestaurant);
 
-// GET /api/restaurants/:restaurantId/menus/:menuId
-router.get('/restaurants/:restaurantId/menus/:menuId', menuController.getMenubyId);
+// Routes protégées
+router.post(
+  '/',
+  authenticate,
+  authorize(['RESTAURANT_OWNER']),
+  menuController.createMenu
+);
 
-// Protected routes (require authentication)
-router.post('/', authenticate, authorize(['RESTAURANT_OWNER']), menuController.createMenu);
-router.put('/:menuId', authenticate, authorize(['RESTAURANT_OWNER']), menuController.updateMenu);
-router.delete('/:menuId', authenticate, authorize(['RESTAURANT_OWNER']), menuController.deleteMenu);
-router.get('/', authenticate, menuController.getRestaurantMenus);
+router.put(
+  '/:id',
+  authenticate,
+  authorize(['RESTAURANT_OWNER']),
+  menuController.updateMenu
+);
+
+router.delete(
+  '/:id',
+  authenticate,
+  authorize(['RESTAURANT_OWNER']),
+  menuController.deleteMenu
+);
 
 export default router;
