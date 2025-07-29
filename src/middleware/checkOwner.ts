@@ -8,6 +8,8 @@ type ResourceType =
   | 'restaurant' 
   | 'menu' 
   | 'timeslot'
+  | 'reservation'
+  | 'user'
   | 'restaurant_has_item'
   | 'menu_has_item';
 
@@ -20,7 +22,7 @@ export const checkOwnership = (resourceType: ResourceType) => {
       // 1. Récupération des IDs selon le type de ressource
       let resourceId: number | { firstId: number, secondId: number };
       
-      if (['restaurant', 'menu', 'timeslot'].includes(resourceType)) {
+      if (['restaurant', 'menu', 'timeslot', 'user'].includes(resourceType)) {
         resourceId = Number(req.params.id);
         if (isNaN(resourceId)) throw new ForbiddenError('ID invalide');
       } else {
@@ -66,6 +68,30 @@ console.log(
           break;
         }
 
+        case 'reservation': {
+  const reservation = await prisma.reservation.findUnique({
+    where: { id: resourceId as number },
+    select: { 
+      user_id: true,
+      restaurant: { select: { owner_id: true } } 
+    }
+  });
+  
+  isOwner = reservation?.user_id === userId 
+           || reservation?.restaurant.owner_id === userId;
+  break;
+}
+
+case 'user': {
+  const user = await prisma.user.findUnique({
+    where: { id: resourceId as number },
+    select: { 
+      id: true // On vérifie seulement l'ID utilisateur
+    }
+  });
+  isOwner = user?.id === userId; // L'user ne peut agir que sur son propre compte
+  break;
+}
         case 'restaurant_has_item': {
           const rhi = await prisma.restaurant_has_item.findUnique({
             where: {

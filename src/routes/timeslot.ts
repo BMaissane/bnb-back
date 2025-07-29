@@ -20,18 +20,21 @@ router.get('/:timeslotId', TimeslotController.getById);
 router.patch('/:timeslotId', 
   authenticate,
   authorize(['RESTAURANT_OWNER']),
+  checkOwnership('timeslot'),
   validateTimeslotDates,
   TimeslotController.update);
 
 router.delete('/:timeslotId',
   authenticate,
   authorize(['RESTAURANT_OWNER']),
+  checkOwnership('timeslot'),
   TimeslotController.delete);
 
 // 4. Route POST à la fin
 router.post('/',
   authenticate,
   authorize(['RESTAURANT_OWNER']),
+  checkOwnership('restaurant'),
   validateTimeslotDates,
   TimeslotController.createTimeslot);
 

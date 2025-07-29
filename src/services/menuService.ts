@@ -79,24 +79,17 @@ async createMenu(data: CreateMenuDto) {
   });
 },
 
-  async getMenusByRestaurant(restaurantId: number) {
-    return prisma.menu.findMany({
-      where: { restaurant_id: restaurantId },
-      include: {
-      menu_has_item: {
-      include: {
-      item: {
-        select: {
-          id: true,
-          name: true,
-      
-        } 
-      }
+async getMenusByRestaurant(restaurantId: number) {
+  return prisma.menu.findMany({
+    where: { 
+      restaurant_id: restaurantId,
+      is_active: true 
+    },
+    include: { 
+      menu_has_item: { include: { item: true } }
     }
-  }
-}
-    });
-  }, 
+  });
+}, 
 
 async syncOrphanItemsToMenu(menuId: number) {
   // Trouver les items du restaurant non liés au menu
