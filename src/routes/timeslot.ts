@@ -34,7 +34,7 @@ router.delete('/:timeslotId',
 router.post('/',
   authenticate,
   authorize(['RESTAURANT_OWNER']),
-  checkOwnership('restaurant'),
+  // checkOwnership('restaurant'),
   validateTimeslotDates,
   TimeslotController.createTimeslot);
 

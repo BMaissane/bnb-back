@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { CreateMenuDto, UpdateMenuDto } from '../interface/dto/menuDto';
 import { prisma } from '../prisma/client';
+import { NotFoundError } from '../middleware/errors';
 
 export const MenuService = {
   
@@ -80,15 +81,20 @@ async createMenu(data: CreateMenuDto) {
 },
 
 async getMenusByRestaurant(restaurantId: number) {
-  return prisma.menu.findMany({
+  console.log(`[Debug] Fetching menus for restaurant ID: ${restaurantId}`); // <-- Ajoutez cette ligne
+  
+  const menus = await prisma.menu.findMany({
     where: { 
       restaurant_id: restaurantId,
-      is_active: true 
+      is_active: true
     },
     include: { 
-      menu_has_item: { include: { item: true } }
+      menu_has_item: { include: { item: true } } 
     }
   });
+
+  console.log(`[Debug] Found ${menus.length} menus`); // <-- Log du résultat
+  return menus;
 }, 
 
 async syncOrphanItemsToMenu(menuId: number) {

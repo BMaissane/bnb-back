@@ -51,7 +51,7 @@ async getByRestaurant(req: Request, res: Response, next: NextFunction) {
 
     console.log(`Restaurant ID: ${restaurantId}, User ID: ${userId}`); // Debug
 
-    const reservations = await ReservationService.getByRestaurantId(restaurantId);
+    const reservations = await ReservationService.getAllRestaurantReservations(restaurantId);
     console.log(`Réservations trouvées: ${reservations.length}`); // Debug
     res.json(reservations);
   } catch (error) {

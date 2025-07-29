@@ -1,12 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import { PrismaClient } from '@prisma/client';
-import { ForbiddenError } from './errors';
+import { ForbiddenError, NotFoundError } from './errors';
 
 const prisma = new PrismaClient();
 
 type ResourceType = 
   | 'restaurant' 
   | 'menu' 
+  | 'item' 
   | 'timeslot'
   | 'reservation'
   | 'user'
@@ -22,7 +23,7 @@ export const checkOwnership = (resourceType: ResourceType) => {
       // 1. Récupération des IDs selon le type de ressource
       let resourceId: number | { firstId: number, secondId: number };
       
-      if (['restaurant', 'menu', 'timeslot', 'user'].includes(resourceType)) {
+      if (['restaurant', 'menu', 'timeslot', 'user', 'item'].includes(resourceType)) {
         resourceId = Number(req.params.id);
         if (isNaN(resourceId)) throw new ForbiddenError('ID invalide');
       } else {
@@ -31,7 +32,7 @@ export const checkOwnership = (resourceType: ResourceType) => {
           secondId: Number(req.params.itemId || req.params.menuId)
         };
         if (isNaN(resourceId.firstId) || isNaN(resourceId.secondId)) {
-          throw new ForbiddenError('IDs invalides');
+          throw new ForbiddenError('You are not the owner of this ressource ');
         }
       }
 console.log(
@@ -58,6 +59,7 @@ console.log(
           isOwner = menu?.restaurant.owner_id === userId;
           break;
         }
+       
 
         case 'timeslot': {
           const timeslot = await prisma.timeslot.findUnique({
@@ -92,19 +94,47 @@ case 'user': {
   isOwner = user?.id === userId; // L'user ne peut agir que sur son propre compte
   break;
 }
-        case 'restaurant_has_item': {
-          const rhi = await prisma.restaurant_has_item.findUnique({
-            where: {
-              restaurant_id_item_id: {
-                restaurant_id: (resourceId as { firstId: number, secondId: number }).firstId,
-                item_id: (resourceId as { firstId: number, secondId: number }).secondId
-              }
-            },
-            include: { restaurant: { select: { owner_id: true } } }
-          });
-          isOwner = rhi?.restaurant.owner_id === userId;
-          break;
-        }
+
+// Dans checkOwnership
+case 'item': {
+  const itemId = resourceId as number;
+  const item = await prisma.item.findUnique({
+    where: { id: itemId },
+    include: {
+      restaurant_has_item: {
+        where: { restaurant: { owner_id: userId } },
+        select: { restaurant_id: true }
+      }
+    }
+  });
+
+  if (!item) {
+    throw new NotFoundError('Item non trouvé');
+  }
+
+  isOwner = (item.restaurant_has_item?.length ?? 0) > 0;
+  break;
+}
+
+case 'restaurant_has_item': {
+  const { firstId: restaurantId, secondId: itemId } = resourceId as { firstId: number, secondId: number };
+
+  if (isNaN(restaurantId) || isNaN(itemId)) {
+    throw new ForbiddenError('IDs invalides');
+  }
+
+  const rhi = await prisma.restaurant_has_item.findUnique({
+    where: { restaurant_id_item_id: { restaurant_id: restaurantId, item_id: itemId } },
+    include: { restaurant: { select: { owner_id: true } } }
+  });
+
+  if (!rhi) {
+    throw new NotFoundError('Item non trouvé dans ce restaurant');
+  }
+
+  isOwner = rhi.restaurant.owner_id === userId;
+  break;
+}
 
         case 'menu_has_item': {
           const mhi = await prisma.menu_has_item.findUnique({

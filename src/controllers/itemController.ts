@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
-import { ItemCategory } from '../@types/express/itemC';
+import { ItemCategory } from '../@types/express/itemCategory';
 import { z } from 'zod';
 import { ItemService } from '../services/itemService';
 
@@ -10,6 +10,13 @@ const createItemSchema = z.object({
   basePrice: z.number().positive(),
   restaurantId: z.number().int().positive(),
   initialStock: z.number().int().min(0).optional().default(0),
+});
+
+const updateItemSchema = z.object({
+  name: z.string().min(1).optional(),
+  description: z.string().optional().nullable(),
+  category: z.nativeEnum(ItemCategory).optional(),
+  basePrice: z.number().positive().optional()
 });
 
 export const ItemController = {
@@ -74,25 +81,21 @@ const item = await ItemService.createItemWithRestaurantLink(
 },
 
 // PATCH/UPDATE api/items:id
-async updateItem(req: Request, res: Response, next : NextFunction) {
+async updateItem(req: Request, res: Response, next: NextFunction) {
   try {
-    const itemId = Number(req.params.id);
+    const restaurantId = Number(req.params.restaurantId);
+    const itemId = Number(req.params.itemId); // Changé de params.id à params.itemId
     const { name, description, category, basePrice } = req.body;
 
-    if (isNaN(itemId)) {
-      return res.status(400).json({ error: "Invalid item ID" });
+    if (isNaN(restaurantId) || isNaN(itemId)) {
+      return res.status(400).json({ error: "IDs invalides" });
     }
-
-    const updatedItem = await ItemService.updateItem(itemId, {
-      name,
-      description,
-      category,
-      basePrice
-    });
+   const validatedData = updateItemSchema.parse(req.body);
+    const updatedItem = await ItemService.updateItem(itemId, validatedData);
 
     res.json(updatedItem);
   } catch (error) {
-   next(error);
+    next(error);
   }
 },
 

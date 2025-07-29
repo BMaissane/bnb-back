@@ -148,7 +148,7 @@ async getById(id: number): Promise<ReservationDetails> {
     return reservations.map(mapToDetails);
   },
 
-  async getByRestaurantId(restaurantId: number): Promise<ReservationDetails[]> {
+  async getAllRestaurantReservations(restaurantId: number): Promise<ReservationDetails[]> {
   return await prisma.$transaction(async (tx) => {
     const reservations = await tx.reservation.findMany({
       where: { restaurant_id: restaurantId },

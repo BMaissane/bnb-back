@@ -36,16 +36,14 @@ async getRestaurantById(id: number) {
 async getAllRestaurants() {
   return prisma.restaurant.findMany({
     where: { is_active: true },
-    include: {
-      menu: {
-        where: { is_active: true },
-        include: {
-          menu_has_item: {
-            include: {
-              item: true
-            }
-          }
-        }
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      image_url: true,
+      genre: true,
+      _count: {
+        select: { menu: { where: { is_active: true } } }
       }
     }
   });

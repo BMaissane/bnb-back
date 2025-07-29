@@ -33,24 +33,20 @@ async create(req: Request, res: Response, next: NextFunction) {
 },
 
   // GET api/restaurant
- async getAllRestaurants(req: Request, res: Response, next: NextFunction) {
-    try {
-      const restaurants = await prisma.restaurant.findMany({
-        where: { is_active: true },
-        select: {
-          id: true,
-          name: true,
-          description: true,
-          image_url: true,
-          genre: true
-          // Exclure les données sensibles
-        }
-      });
-      res.json(restaurants);
-    } catch (error) {
-      next(error);
+async getAllRestaurants(req: Request, res: Response, next: NextFunction) {
+  try {
+    const restaurants = await RestaurantService.getAllRestaurants();
+    
+    if (restaurants.length === 0) {
+      // Optionnel : retourner 200 avec tableau vide ou 404
+      return res.status(200).json([]); 
     }
-  },
+
+    res.json(restaurants);
+  } catch (error) {
+    next(error);
+  }
+},
 
   // GET api/restaurant/:id
 async getById(req: Request, res: Response, next: NextFunction) {
