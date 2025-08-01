@@ -16,15 +16,15 @@ router.get('/', (req, res, next) => {
 }, TimeslotController.getByRestaurant);
 
 // 3. Toutes les autres routes avec paramètres
-router.get('/:timeslotId', TimeslotController.getById);
-router.patch('/:timeslotId', 
+router.get('/:id', TimeslotController.getById);
+router.patch('/:id', 
   authenticate,
   authorize(['RESTAURANT_OWNER']),
   checkOwnership('timeslot'),
   validateTimeslotDates,
   TimeslotController.update);
 
-router.delete('/:timeslotId',
+router.delete('/:id',
   authenticate,
   authorize(['RESTAURANT_OWNER']),
   checkOwnership('timeslot'),

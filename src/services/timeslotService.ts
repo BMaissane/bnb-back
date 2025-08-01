@@ -84,11 +84,11 @@ async createTimeslot(restaurantId: number, userId: number, data: {
       }
     });
 
-    // Double vérification après création
-    if (new Date(timeslot.start_at) < new Date()) {
-      await tx.timeslot.delete({ where: { id: timeslot.id } });
-      throw new Error('TIMESLOT_IN_PAST_AFTER_CREATION');
-    }
+    // // Double vérification après création
+    // if (new Date(timeslot.start_at) < new Date()) {
+    //   await tx.timeslot.delete({ where: { id: timeslot.id } });
+    //   throw new Error('TIMESLOT_IN_PAST_AFTER_CREATION');
+    // }
 
     return timeslot;
   });

@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { ItemCategory } from '../@types/express/itemCategory';
 import { z } from 'zod';
 import { ItemService } from '../services/itemService';
+import { NotFoundError } from '../middleware/errors';
 
 const createItemSchema = z.object({
   name: z.string().min(1),
@@ -84,7 +85,7 @@ const item = await ItemService.createItemWithRestaurantLink(
 async updateItem(req: Request, res: Response, next: NextFunction) {
   try {
     const restaurantId = Number(req.params.restaurantId);
-    const itemId = Number(req.params.itemId); // Changé de params.id à params.itemId
+    const itemId = Number(req.params.id); // Changé de params.id à params.itemId
     const { name, description, category, basePrice } = req.body;
 
     if (isNaN(restaurantId) || isNaN(itemId)) {
@@ -99,18 +100,25 @@ async updateItem(req: Request, res: Response, next: NextFunction) {
   }
 },
 
-// DELETE api/items/:id
-async deleteItem(req: Request, res: Response, next : NextFunction) {
+// DELETE api/restaurants/:restaurantId/items/:itemId
+async deleteItem(req: Request, res: Response, next: NextFunction) {
   try {
-    const itemId = Number(req.params.id);
+    const restaurantId = Number(req.params.restaurantId);
+    const itemId = Number(req.params.itemId);
 
-    if (isNaN(itemId)) {
+    if (isNaN(restaurantId)) {
+      return res.status(400).json({ error: "Invalid restaurant ID" });
+    }
+    if (isNaN(itemId)) { // <-- Il y avait une parenthèse en trop ici
       return res.status(400).json({ error: "Invalid item ID" });
     }
 
-    await ItemService.deleteItem(itemId);
+    await ItemService.deleteItem(itemId, restaurantId);
     res.status(204).send(); // No Content
   } catch (error) {
+    if (error instanceof NotFoundError) { 
+      return res.status(404).json({ error: error.message });
+    }
     next(error);
   }
 }

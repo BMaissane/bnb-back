@@ -38,7 +38,7 @@ router.get(
 router.get('/restaurants/:restaurantId/reservations',
   authenticate,
   authorize(['RESTAURANT_OWNER']),
-  checkOwnership('restaurant'), // Vérifie que l'user est bien proprio
+  checkOwnership('restaurant'),  // Vérifie que l'user est bien proprio
   ReservationController.getByRestaurant
 );
 

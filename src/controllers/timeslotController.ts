@@ -97,7 +97,7 @@ async getAvailable(req: Request, res: Response, next: NextFunction) {
 async update(req: Request, res: Response, next : NextFunction) {
     try {
         const updated = await TimeslotService.updateTimeslot(
-            Number(req.params.timeslotId),
+            Number(req.params.id),
             req.body // Transmet toutes les données brutes
         );
         res.json(updated); // Reçoit déjà des données formatées

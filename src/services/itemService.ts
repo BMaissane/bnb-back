@@ -1,4 +1,5 @@
 import { PrismaClient, ItemCategory } from '@prisma/client';
+import { NotFoundError } from '../middleware/errors';
 const prisma = new PrismaClient();
 
 export const ItemService = {
@@ -114,21 +115,53 @@ async updateItem(
   });
 },
 
-async deleteItem(itemId: number) {
+async deleteItem(itemId: number, restaurantId: number) {
   return await prisma.$transaction(async (tx) => {
-    // 1. Supprimer les liaisons
-    await tx.restaurant_has_item.deleteMany({
-      where: { item_id: itemId }
+    // 1. Vérifier que l'item appartient bien au restaurant
+    const restaurantItem = await tx.restaurant_has_item.findUnique({
+      where: { 
+        restaurant_id_item_id: { 
+          restaurant_id: restaurantId, 
+          item_id: itemId 
+        } 
+      }
     });
 
-    await tx.menu_has_item.deleteMany({
-      where: { item_id: itemId }
+    if (!restaurantItem) {
+      throw new NotFoundError("Item not found in this restaurant");
+    }
+
+    // 2. Supprimer les liaisons spécifiques à ce restaurant
+    await tx.restaurant_has_item.delete({
+      where: { 
+        restaurant_id_item_id: { 
+          restaurant_id: restaurantId, 
+          item_id: itemId 
+        } 
+      }
     });
 
-    // 2. Supprimer l'item
-    return await tx.item.delete({
-      where: { id: itemId }
+    // 3. Vérifier si l'item est utilisé dans d'autres restaurants
+    const otherRestaurants = await tx.restaurant_has_item.findMany({
+      where: { 
+        item_id: itemId,
+        NOT: { restaurant_id: restaurantId }
+      }
     });
+
+    // 4. Si l'item n'est utilisé nulle part ailleurs, le supprimer complètement
+    if (otherRestaurants.length === 0) {
+      await tx.menu_has_item.deleteMany({
+        where: { item_id: itemId }
+      });
+
+      return await tx.item.delete({
+        where: { id: itemId }
+      });
+    }
+
+    // Retourner l'item même s'il n'a pas été supprimé (car utilisé ailleurs)
+    return await tx.item.findUnique({ where: { id: itemId } });
   });
 }
 };
