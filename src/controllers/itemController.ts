@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { ItemService } from '../services/itemService';
 import { NotFoundError } from '../middleware/errors';
 
+
 const createItemSchema = z.object({
   name: z.string().min(1),
   description: z.string().optional().nullable(), // Explicitement optionnel et nullable
@@ -17,6 +18,7 @@ const updateItemSchema = z.object({
   name: z.string().min(1).optional(),
   description: z.string().optional().nullable(),
   category: z.nativeEnum(ItemCategory).optional(),
+  restaurantId: z.number().int().positive(),
   basePrice: z.number().positive().optional()
 });
 
@@ -81,45 +83,46 @@ const item = await ItemService.createItemWithRestaurantLink(
   }
 },
 
-// PATCH/UPDATE api/items:id
-async updateItem(req: Request, res: Response, next: NextFunction) {
-  try {
-    const restaurantId = Number(req.params.restaurantId);
-    const itemId = Number(req.params.id); // Changé de params.id à params.itemId
-    const { name, description, category, basePrice } = req.body;
+// PATCH /api/items/:id
+  async updateItem(req: Request, res: Response, next: NextFunction) {
+    try {
+      const itemId = Number(req.params.id);
+      const restaurantId = req.restaurantId; // TypeScript sait maintenant que cette propriété existe
 
-    if (isNaN(restaurantId) || isNaN(itemId)) {
-      return res.status(400).json({ error: "IDs invalides" });
+      if (!restaurantId) {
+        throw new NotFoundError('restaurantId non défini');
+      }
+
+      const validatedData = updateItemSchema.parse(req.body);
+      const updatedItem = await ItemService.updateItem(
+        itemId,
+        validatedData,
+        restaurantId
+      );
+
+      res.json(updatedItem);
+    } catch (error) {
+      next(error);
     }
-   const validatedData = updateItemSchema.parse(req.body);
-    const updatedItem = await ItemService.updateItem(itemId, validatedData);
+  },
 
-    res.json(updatedItem);
-  } catch (error) {
-    next(error);
+  // DELETE /api/items/:id
+  async deleteItem(req: Request, res: Response, next: NextFunction) {
+    try {
+      const itemId = Number(req.params.id);
+      const restaurantId = req.restaurantId;
+
+      if (!restaurantId) {
+        throw new NotFoundError('restaurantId non défini');
+      }
+
+      await ItemService.deleteItem(itemId, restaurantId);
+      res.status(204).send();
+    } catch (error) {
+      if (error instanceof NotFoundError) {
+        return res.status(404).json({ error: error.message });
+      }
+      next(error);
+    }
   }
-},
-
-// DELETE api/restaurants/:restaurantId/items/:itemId
-async deleteItem(req: Request, res: Response, next: NextFunction) {
-  try {
-    const restaurantId = Number(req.params.restaurantId);
-    const itemId = Number(req.params.id);
-
-    if (isNaN(restaurantId)) {
-      return res.status(400).json({ error: "Invalid restaurant ID" });
-    }
-    if (isNaN(itemId)) { // <-- Il y avait une parenthèse en trop ici
-      return res.status(400).json({ error: "Invalid item ID" });
-    }
-
-    await ItemService.deleteItem(itemId, restaurantId);
-    res.status(204).send(); // No Content
-  } catch (error) {
-    if (error instanceof NotFoundError) { 
-      return res.status(404).json({ error: error.message });
-    }
-    next(error);
-  }
-}
 }

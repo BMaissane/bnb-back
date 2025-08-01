@@ -89,10 +89,11 @@ async updateItem(
     description?: string | null;
     category?: ItemCategory;
     basePrice?: number;
-  }
+  },
+  restaurantId: number // Paramètre maintenant obligatoire
 ) {
   return await prisma.$transaction(async (tx) => {
-    // 1. Mettre à jour l'item
+    // 1. Mise à jour de l'item
     const updatedItem = await tx.item.update({
       where: { id: itemId },
       data: {
@@ -103,10 +104,13 @@ async updateItem(
       }
     });
 
-    // 2. Mettre à jour le prix dans restaurant_has_item si basePrice change
+    // 2. Mise à jour du prix spécifique au restaurant
     if (updateData.basePrice !== undefined) {
       await tx.restaurant_has_item.updateMany({
-        where: { item_id: itemId },
+        where: { 
+          item_id: itemId,
+          restaurant_id: restaurantId
+        },
         data: { current_price: updateData.basePrice }
       });
     }
@@ -116,52 +120,24 @@ async updateItem(
 },
 
 async deleteItem(itemId: number, restaurantId: number) {
-  return await prisma.$transaction(async (tx) => {
-    // 1. Vérifier que l'item appartient bien au restaurant
-    const restaurantItem = await tx.restaurant_has_item.findUnique({
-      where: { 
-        restaurant_id_item_id: { 
-          restaurant_id: restaurantId, 
-          item_id: itemId 
-        } 
+  await prisma.$transaction([
+    // Supprime la liaison restaurant-item
+    prisma.restaurant_has_item.delete({
+      where: {
+        restaurant_id_item_id: {
+          restaurant_id: restaurantId,
+          item_id: itemId
+        }
       }
-    });
-
-    if (!restaurantItem) {
-      throw new NotFoundError("Item not found in this restaurant");
-    }
-
-    // 2. Supprimer les liaisons spécifiques à ce restaurant
-    await tx.restaurant_has_item.delete({
-      where: { 
-        restaurant_id_item_id: { 
-          restaurant_id: restaurantId, 
-          item_id: itemId 
-        } 
+    }),
+    
+    // Supprime l'item s'il n'est plus lié à aucun restaurant
+    prisma.item.deleteMany({
+      where: {
+        id: itemId,
+        restaurant_has_item: { none: {} }
       }
-    });
-
-    // 3. Vérifier si l'item est utilisé dans d'autres restaurants
-    const otherRestaurants = await tx.restaurant_has_item.findMany({
-      where: { 
-        item_id: itemId,
-        NOT: { restaurant_id: restaurantId }
-      }
-    });
-
-    // 4. Si l'item n'est utilisé nulle part ailleurs, le supprimer complètement
-    if (otherRestaurants.length === 0) {
-      await tx.menu_has_item.deleteMany({
-        where: { item_id: itemId }
-      });
-
-      return await tx.item.delete({
-        where: { id: itemId }
-      });
-    }
-
-    // Retourner l'item même s'il n'a pas été supprimé (car utilisé ailleurs)
-    return await tx.item.findUnique({ where: { id: itemId } });
-  });
+    })
+  ]);
 }
 };

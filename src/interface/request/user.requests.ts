@@ -3,16 +3,6 @@ import { UserType } from '@prisma/client';
 // Déclaration globale Express (à garder UNIQUEMENT ici)
 declare global {
   namespace Express {
-    interface Request {
-      user?: {
-        id: number;
-        type_user: UserType; // Utilisez toujours type_user pour la cohérence
-      };
-      params: {
-                restaurantId: string;
-                timeslotId?: string;
-            }
-    }
   }
 }
 

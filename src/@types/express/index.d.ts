@@ -2,13 +2,21 @@ import { UserType, Restaurant } from '@prisma/client';
 
 declare global {
   namespace Express {
+      interface AuthenticatedUser {
+      id: number;
+      type_user: UserType;
+    }
     interface Request {
-      user?: {
-        id: number;
-        type_user: UserType;
-      };
+      user?: AuthenticatedUser;
+      restaurantId?: number;
     }
   }
+  
+   interface ParamsDictionary {
+      restaurantId?: string;
+      timeslotId?: string;
+      itemId?: string;
+    }
 
   // Extension des types Prisma
   namespace Prisma {
@@ -25,3 +33,9 @@ declare global {
 export type RestaurantResponse = Omit<Restaurant, 'opening_hours'> & {
   opening_hours?: globalThis.Prisma.JsonObject['opening_hours'];
 };
+
+export interface AuthenticatedRequest extends Express.Request {
+  user: Express.AuthenticatedUser; // Version non-optionnelle
+  restaurantId?: number;
+}
+export type { AuthenticatedUser } from Express;

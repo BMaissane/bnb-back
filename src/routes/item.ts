@@ -2,39 +2,34 @@ import express from 'express';
 import { ItemController } from '../controllers/itemController';
 import { authenticate, authorize } from '../middleware/authMiddleware';
 import { checkOwnership } from '../middleware/checkOwner';
+import { checkItemOwner } from '../middleware/checkItemOwner';
 
+const router = express.Router();
 
-const itemRouter = express.Router();
+router.post('/', 
+  authenticate, 
+  authorize(['RESTAURANT_OWNER']), 
+  ItemController.createItem);
 
-// Dans item.ts et timeslot.ts
-itemRouter.use((req, res, next) => {
-  console.log('Incoming params:', req.params); // Debug des paramètres
-  next();
-});
+router.get('/:id', 
+  authenticate, 
+  ItemController.getItemById);
 
-// POST /items - Créer un article
-itemRouter.post('/', 
-    authenticate, 
-    authorize(['RESTAURANT_OWNER']), 
-    ItemController.createItem);
+// Routes dépendantes du restaurant_id
+// PATCH /restaurants/:restaurantId/items/:itemId - Mise à jour item dans un restaurant spécifique
+router.patch('/:id',
+  authenticate,
+  authorize(['RESTAURANT_OWNER']),
+  checkItemOwner,
+  ItemController.updateItem
+);
 
-// GET /items/:id - Récupérer un article
-itemRouter.get('/:id', 
-    authenticate, 
-    ItemController.getItemById);
+// DELETE /restaurants/:restaurantId/items/:itemId - Suppression item d'un restaurant
+router.delete('/:id',
+  authenticate,
+  authorize(['RESTAURANT_OWNER']),
+  checkItemOwner,
+  ItemController.deleteItem
+);
 
-// PATCH /restaurants/:restaurantId/items/:itemId - Mettre à jour un article
-itemRouter.patch('/:id', 
-    authenticate,
-    authorize(['RESTAURANT_OWNER']),
-    checkOwnership('item'),
-    ItemController.updateItem);
-
-// DELETE /restaurants/:restaurantId/items/:itemId - Supprimer un article
-itemRouter.delete('/:id',
-    authenticate,
-    authorize(['RESTAURANT_OWNER']),
-    checkOwnership('restaurant_has_item'),
-    ItemController.deleteItem);
-
-export default itemRouter;
+export default router;
