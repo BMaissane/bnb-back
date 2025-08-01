@@ -104,7 +104,7 @@ async updateItem(req: Request, res: Response, next: NextFunction) {
 async deleteItem(req: Request, res: Response, next: NextFunction) {
   try {
     const restaurantId = Number(req.params.restaurantId);
-    const itemId = Number(req.params.itemId);
+    const itemId = Number(req.params.id);
 
     if (isNaN(restaurantId)) {
       return res.status(400).json({ error: "Invalid restaurant ID" });

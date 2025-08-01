@@ -6,6 +6,11 @@ import { validateTimeslotDates } from '../middleware/timeslotValidation';
 
 const router = express.Router({ mergeParams: true });
 
+// Dans item.ts et timeslot.ts
+router.use((req, res, next) => {
+  console.log('Incoming params:', req.params); // Debug des paramètres
+  next();
+});
 // Route pour les timeslots disponibles
 router.get('/available', TimeslotController.getAvailable);
 

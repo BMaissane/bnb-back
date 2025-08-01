@@ -6,6 +6,12 @@ import { checkOwnership } from '../middleware/checkOwner';
 
 const itemRouter = express.Router();
 
+// Dans item.ts et timeslot.ts
+itemRouter.use((req, res, next) => {
+  console.log('Incoming params:', req.params); // Debug des paramètres
+  next();
+});
+
 // POST /items - Créer un article
 itemRouter.post('/', 
     authenticate, 
@@ -18,14 +24,14 @@ itemRouter.get('/:id',
     ItemController.getItemById);
 
 // PATCH /restaurants/:restaurantId/items/:itemId - Mettre à jour un article
-itemRouter.patch('/restaurants/:restaurantId/items/:id', 
+itemRouter.patch('/:id', 
     authenticate,
     authorize(['RESTAURANT_OWNER']),
     checkOwnership('item'),
     ItemController.updateItem);
 
 // DELETE /restaurants/:restaurantId/items/:itemId - Supprimer un article
-itemRouter.delete('/restaurants/:restaurantId/items/:itemId',
+itemRouter.delete('/:id',
     authenticate,
     authorize(['RESTAURANT_OWNER']),
     checkOwnership('restaurant_has_item'),

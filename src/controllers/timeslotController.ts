@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import { formatTimeslot, TimeslotService } from '../services/timeslotService';
 import prisma from '../prisma/client';
 import { validateTimeslotDates } from '../middleware/timeslotValidation';
+import { NotFoundError } from '../middleware/errors';
 
 
 export const TimeslotController = {
@@ -62,12 +63,12 @@ async getByRestaurant(req: Request, res: Response, next: NextFunction) {
 async getById(req: Request, res: Response, next: NextFunction) {
     try {
         // Validation TypeScript
-        const timeslotId = Number(req.params.timeslotId);
+        const timeslotId = Number(req.params.id);
         const restaurantId = Number(req.params.restaurantId);
         
-        if (isNaN(timeslotId) || isNaN(restaurantId)) {
-            throw new Error('IDs invalides');
-        }
+           if (isNaN(timeslotId)) { // Simplifier la validation
+      throw new NotFoundError('ID de créneau invalide');
+    }
 
         const timeslot = await TimeslotService.getTimeslotById(timeslotId, restaurantId);
         res.json(timeslot);
@@ -108,12 +109,13 @@ async update(req: Request, res: Response, next : NextFunction) {
 
   // DELETE /timeslots/:id
 async delete(req: Request, res: Response, next: NextFunction) {
-    try {
-        await TimeslotService.deleteTimeslot(Number(req.params.timeslotId)); 
-        res.status(204).send(); // ✅ Réponse vide avec statut 204 (No Content)
-    } catch (error) {
-        next(error); 
-    }
+  try {
+    const timeslotId = Number(req.params.id); // Paramètre doit s'appeler ':id'
+    await TimeslotService.deleteTimeslot(timeslotId);
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
 }
 };
 
