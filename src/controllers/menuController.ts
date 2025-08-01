@@ -45,15 +45,20 @@ async getMenusByRestaurant(req: Request, res: Response, next: NextFunction) {
     const restaurantId = Number(req.params.id);
     
     if (isNaN(restaurantId)) {
-      return res.status(400).json({ error: "ID de restaurant invalide" });
+      throw new NotFoundError("ID de restaurant invalide");
+    }
+
+    // Vérifier que le restaurant existe
+    const restaurantExists = await prisma.restaurant.findUnique({
+      where: { id: restaurantId },
+      select: { id: true }
+    });
+
+    if (!restaurantExists) {
+      throw new NotFoundError("Restaurant non trouvé");
     }
 
     const menus = await MenuService.getMenusByRestaurant(restaurantId);
-    
-    if (!menus || menus.length === 0) {
-      return res.status(404).json({ message: "Aucun menu trouvé pour ce restaurant" });
-    }
-
     res.json(menus);
   } catch (error) {
     next(error);

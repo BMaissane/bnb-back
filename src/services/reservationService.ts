@@ -148,61 +148,63 @@ async getById(id: number): Promise<ReservationDetails> {
     return reservations.map(mapToDetails);
   },
 
-  async getAllRestaurantReservations(restaurantId: number): Promise<ReservationDetails[]> {
-  return await prisma.$transaction(async (tx) => {
-    const reservations = await tx.reservation.findMany({
-      where: { restaurant_id: restaurantId },
-      include: {
-        timeslot: {
-          select: {
-            start_at: true,
-            end_at: true
-          }
-        },
-        reservation_has_item: {
-          select: {
-            item_id: true,
-            quantity: true,
-            item_price: true,
-            item: {
-              select: {
-                name: true
-              }
+async getAllRestaurantReservations(restaurantId: number): Promise<ReservationDetails[]> {
+  console.log(`[ReservationService] Fetching all reservations for restaurant ${restaurantId}`);
+  
+  const reservations = await prisma.reservation.findMany({
+    where: { restaurant_id: restaurantId },
+    include: {
+      timeslot: {
+        select: {
+          start_at: true,
+          end_at: true
+        }
+      },
+      reservation_has_item: {
+        select: {
+          item_id: true,
+          quantity: true,
+          item_price: true,
+          item: {
+            select: {
+              name: true
             }
-          }
-        },
-        user: {
-          select: {
-            id: true,
-            first_name: true,
-            email: true
           }
         }
       },
-      orderBy: { created_at: 'desc' },
-    });
-
-    return reservations.map(reservation => ({
-      id: reservation.id,
-      status: reservation.status,
-      specialRequests: reservation.special_requests || undefined,
-      timeslot: {
-        startAt: reservation.timeslot.start_at,
-        endAt: reservation.timeslot.end_at
-      },
-      items: reservation.reservation_has_item.map(item => ({
-        itemId: item.item_id,
-        name: item.item.name,
-        quantity: item.quantity,
-        price: Number(item.item_price)
-      })),
       user: {
-        id: reservation.user.id,
-        firstName: reservation.user.first_name,
-        email: reservation.user.email
+        select: {
+          id: true,
+          first_name: true,
+          email: true
+        }
       }
-    }));
+    },
+    orderBy: { created_at: 'desc' },
   });
+
+  console.log(`[ReservationService] Found ${reservations.length} reservations for restaurant ${restaurantId}`);
+  
+  return reservations.map(reservation => ({
+    id: reservation.id,
+    status: reservation.status,
+    specialRequests: reservation.special_requests || undefined,
+    timeslot: {
+      startAt: reservation.timeslot.start_at,
+      endAt: reservation.timeslot.end_at
+    },
+    items: reservation.reservation_has_item.map(item => ({
+      itemId: item.item_id,
+      name: item.item.name,
+      quantity: item.quantity,
+      price: Number(item.item_price)
+    })),
+    user: {
+      id: reservation.user.id,
+      firstName: reservation.user.first_name,
+      email: reservation.user.email
+    }
+  }));
 },
 
 async update(

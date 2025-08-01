@@ -1,6 +1,8 @@
 import { NextFunction, Request, Response } from 'express';
 import { ReservationService } from '../services/reservationService';
 import { UpdateReservationInput } from '../interface/dto/reservationDto';
+import { NotFoundError } from '../middleware/errors';
+import prisma from '../prisma/client';
 
 
 export const ReservationController = {
@@ -43,19 +45,33 @@ export const ReservationController = {
     }
   },
 
+// reservationController.ts - getByRestaurant
 async getByRestaurant(req: Request, res: Response, next: NextFunction) {
   try {
-    console.log('Tentative d\'accès aux réservations du restaurant'); // Debug
-    const restaurantId = Number(req.params.restaurantId);
+    const restaurantId = Number(req.params.id); // Note: 'id' si votre route est '/:id/reservations'
     const userId = req.user!.id;
 
-    console.log(`Restaurant ID: ${restaurantId}, User ID: ${userId}`); // Debug
+    console.log(`[ReservationController] Fetching reservations for restaurant ${restaurantId} by user ${userId}`);
+
+    if (isNaN(restaurantId)) {
+      throw new NotFoundError("ID de restaurant invalide");
+    }
+
+    // Vérifier que le restaurant existe et appartient à l'utilisateur
+    const restaurant = await prisma.restaurant.findUnique({
+      where: { id: restaurantId, owner_id: userId },
+      select: { id: true }
+    });
+
+    if (!restaurant) {
+      throw new NotFoundError("Restaurant non trouvé ou non autorisé");
+    }
 
     const reservations = await ReservationService.getAllRestaurantReservations(restaurantId);
-    console.log(`Réservations trouvées: ${reservations.length}`); // Debug
+    console.log(`[ReservationController] Found ${reservations.length} reservations`);
     res.json(reservations);
   } catch (error) {
-    console.error('Erreur dans getByRestaurant:', error); // Debug
+    console.error('[ReservationController] Error in getByRestaurant:', error);
     next(error);
   }
 },

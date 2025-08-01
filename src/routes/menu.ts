@@ -9,7 +9,7 @@ const router = express.Router();
 
 // Routes publiques
 router.get('/:id', menuController.getMenuById); // GET /api/menu/10
-router.get('/:restaurantId', menuController.getMenusByRestaurant);
+router.get('/restaurants/:id', menuController.getMenusByRestaurant);
 
 // Routes protégées
 router.post(

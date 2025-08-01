@@ -81,7 +81,7 @@ async createMenu(data: CreateMenuDto) {
 },
 
 async getMenusByRestaurant(restaurantId: number) {
-  console.log(`[Debug] Fetching menus for restaurant ID: ${restaurantId}`); // <-- Ajoutez cette ligne
+  console.log(`[MenuService] Fetching active menus for restaurant ID: ${restaurantId}`);
   
   const menus = await prisma.menu.findMany({
     where: { 
@@ -89,11 +89,15 @@ async getMenusByRestaurant(restaurantId: number) {
       is_active: true
     },
     include: { 
-      menu_has_item: { include: { item: true } } 
+      menu_has_item: { 
+        include: { 
+          item: true 
+        } 
+      } 
     }
   });
 
-  console.log(`[Debug] Found ${menus.length} menus`); // <-- Log du résultat
+  console.log(`[MenuService] Found ${menus.length} menus for restaurant ${restaurantId}`);
   return menus;
 }, 
 

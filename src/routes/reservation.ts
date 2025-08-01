@@ -35,10 +35,10 @@ router.get(
 );
 
 // Seul le propriétaire peut voir les réservations de son restaurant
-router.get('/restaurants/:restaurantId/reservations',
+router.get('/restaurants/:id', 
   authenticate,
   authorize(['RESTAURANT_OWNER']),
-  checkOwnership('restaurant'),  // Vérifie que l'user est bien proprio
+  checkOwnership('restaurant'),
   ReservationController.getByRestaurant
 );
 
