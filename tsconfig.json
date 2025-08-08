@@ -3,20 +3,26 @@
     "target": "ES2020",
     "module": "commonjs",
     "outDir": "./dist",
-    "rootDir": "./",
+    "rootDir": "./src",
+     "baseUrl": "./src",
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
     "typeRoots": ["./src/@types", "./node_modules/@types"],
     "types": ["node", "express"],
     "paths": {
-      "@prisma/client": ["./node_modules/@prisma/client"]
+      "@prisma/client": ["./node_modules/@prisma/client"],
+      "@services/*": ["services/*"]
     }
+  }, "scripts": {
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "ts-node": {
     "esm": false,
     "experimentalSpecifierResolution": "node"
   },
-  "include": ["src/**/*", "scripts"],
+  "include": ["src/**/*", "src/scripts", "src/test"],
   "exclude": ["node_modules"]
 }

@@ -43,10 +43,15 @@ export const registerUser = async (req: Request, res: Response) => {
 
 export const loginUser = async (req: Request, res: Response) => {
   try {
-    const { email, password } = req.body;
+    // Validation basique
+    if (!req.body?.email || !req.body?.password) {
+      return res.status(400).json({ 
+        code: 'MISSING_CREDENTIALS',
+        message: 'Email et mot de passe requis' 
+      });
+    }
 
-    // Debug: Afficher les valeurs reçues
-    console.log('Tentative de login avec:', { email, password });
+    const { email, password } = req.body;
 
     const user = await prisma.user.findUnique({
       where: { email },
@@ -59,34 +64,50 @@ export const loginUser = async (req: Request, res: Response) => {
     });
 
     if (!user) {
-      console.log('Utilisateur non trouvé pour email:', email);
-      return res.status(401).json({ message: 'Identifiants incorrects' });
+      return res.status(401).json({ 
+        code: 'INVALID_CREDENTIALS',
+        message: 'Identifiants incorrects' 
+      });
     }
 
-    // Debug: Comparaison mot de passe
     const isMatch = await bcrypt.compare(password, user.password_hash);
-    console.log('Résultat comparaison mdp:', isMatch);
-
     if (!isMatch) {
-      return res.status(401).json({ message: 'Identifiants incorrects' });
+      return res.status(401).json({
+        code: 'INVALID_CREDENTIALS', 
+        message: 'Identifiants incorrects'
+      });
     }
 
-    // Vérification JWT_SECRET
+    // Vérification sécurité JWT
     if (!process.env.JWT_SECRET) {
-      throw new Error('JWT_SECRET manquant');
+      console.error('JWT_SECRET manquant dans .env');
+      return res.status(500).json({ 
+        code: 'SERVER_ERROR',
+        message: 'Erreur de configuration serveur' 
+      });
     }
 
     const token = jwt.sign(
-      { id: user.id, type_user: user.type_user },
+      { 
+        id: user.id, 
+        type_user: user.type_user 
+      },
       process.env.JWT_SECRET,
       { expiresIn: '24h' }
     );
 
-    res.json({ token, userId: user.id });
+    return res.json({ 
+      token,
+      userId: user.id,
+      userType: user.type_user 
+    });
 
   } catch (error) {
     console.error('Erreur login:', error);
-    res.status(500).json({ message: 'Erreur serveur' });
+    return res.status(500).json({
+      code: 'SERVER_ERROR',
+      message: 'Erreur serveur' 
+    });
   }
 };
 
