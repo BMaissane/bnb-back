@@ -35,12 +35,19 @@ app.use((req, res, next) => {
   next();
 });
 
-// 4. Prisma middleware (version corrigée)
+// 4. Prisma middleware 
 app.use((req, res, next) => {
   res.on('finish', () => {
-    prisma.$disconnect().catch(console.error);
+    if (prisma && typeof prisma.$disconnect === 'function') {
+      prisma.$disconnect().catch(() => {});
+    }
   });
   next();
+});
+
+// Route test pour Jest
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK' });
 });
 
 // 5. Routes (version corrigée)
@@ -67,7 +74,7 @@ app.get('/', (req, res) => {
 app.use(errorHandler);
 
 app.listen(port, () => {
-  console.log(`Server running on port ${port}`); // Template literal corrigé
+  console.log(`Server running on port ${port}`);
 });
 
 export default app;
