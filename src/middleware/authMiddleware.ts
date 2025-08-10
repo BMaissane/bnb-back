@@ -5,7 +5,6 @@ import { UnauthorizedError, ForbiddenError } from './errors';
 import { AuthenticatedUser } from '../@types/express';
 
 
-
 export const authenticate = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const token = req.headers.authorization?.split(' ')[1];

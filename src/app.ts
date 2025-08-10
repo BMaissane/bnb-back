@@ -4,15 +4,12 @@ import helmet from 'helmet';
 import 'reflect-metadata';
 import { corsMiddleware } from './middleware/cors';
 import { errorHandler } from './middleware/errorHandler';
-import { urlencodedParser } from './middleware/bodyParser';
 import authRouter from './routes/auth';
 import userRouter from './routes/user';
 import reservationsRouter from './routes/reservation';
 import menuRouter from './routes/menu';
 import itemRouter from './routes/item';
 import timeslotRouter from './routes/timeslot';
-import bodyParser from 'body-parser';
-import testRoutes from './routes/testRoutes';
 import restaurantRouter from './routes/restaurant';
 
 
@@ -24,10 +21,10 @@ app.use(express.json());
 app.use(helmet());
 app.use(corsMiddleware);
 
-// 2. Body parsing (version simplifiée)
+// 2. Body parsing
 app.use(express.urlencoded({ extended: true }));
 
-// 3. Logging des requêtes (version corrigée)
+// 3. Logging des requêtes 
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   console.log('Params:', req.params);
@@ -50,7 +47,7 @@ app.get('/health', (req, res) => {
   res.status(200).json({ status: 'OK' });
 });
 
-// 5. Routes (version corrigée)
+// 5. Routes 
 const restaurantParentRouter = express.Router({ mergeParams: true });
 app.use('/api/restaurants/:restaurantId', restaurantParentRouter); // :restaurantId dynamique
 restaurantParentRouter.use('/timeslots', timeslotRouter); // Route imbriquée
@@ -62,8 +59,6 @@ app.use('/api/reservations', reservationsRouter);
 app.use('/api/menu', menuRouter);
 app.use('/api/items', itemRouter);
 
-app.use('/api/test', testRoutes);
-
 
 // 6. Route racine
 app.get('/', (req, res) => {
@@ -72,9 +67,5 @@ app.get('/', (req, res) => {
 
 // 7. Gestion des erreurs
 app.use(errorHandler);
-
-app.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
 
 export default app;

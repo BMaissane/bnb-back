@@ -33,6 +33,12 @@ enum ReservationStatus {
   CANCELED
 }
 
+enum MessageStatus {
+  SENT
+  READ
+}
+
+
 // This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model item {
   id                   Int                    @id @default(autoincrement())
@@ -75,7 +81,7 @@ model message {
   restaurant_id  Int
   reservation_id Int?
   content        String
-  status         String?      @default("sent") @db.VarChar(20)
+  status         MessageStatus     @default(SENT) // Value: "SENT" or "READ"
   created_at     DateTime?    @default(now()) @db.Timestamptz(6)
   updated_at     DateTime?    @default(now()) @db.Timestamptz(6)
   reservation    reservation? @relation(fields: [reservation_id], references: [id], onDelete: NoAction, onUpdate: NoAction)

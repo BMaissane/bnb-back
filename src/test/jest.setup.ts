@@ -1,4 +1,5 @@
 import { prisma } from '../prisma/client';
+import { stopTestServer } from './testUtils';
 
 jest.mock('../prisma/client', () => ({
   prisma: {
@@ -10,13 +11,10 @@ jest.mock('../prisma/client', () => ({
   }
 }));
 
-beforeEach(() => {
-  jest.clearAllMocks();
+beforeEach(async () => {
+  await stopTestServer(); // Nettoyage entre chaque test
 });
 
 afterAll(async () => {
-  // Nouvelle version simplifiée
-  if (jest.isMockFunction(prisma.$disconnect)) {
-    await prisma.$disconnect();
-  }
-});
+  await stopTestServer(); // Nettoyage final
+}, 1000);
