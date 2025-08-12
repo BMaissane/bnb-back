@@ -63,6 +63,11 @@ app.get('/', (req, res) => {
   res.send('API BookNBite');
 });
 
+app.get('/api/auth', (req, res) => {
+  res.status(200).json({ status: 'OK' });
+});
+
+
 // 7. Gestion des erreurs
 app.use(errorHandler);
 
