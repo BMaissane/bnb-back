@@ -1,21 +1,18 @@
 import express from 'express';
 import { authenticate } from '../middleware/authMiddleware';
-import { loginUser, 
-  registerUser,   
-  forgotPassword, 
-  resetPassword } from '../controllers/authController';
+import { AuthController} from '../controllers/authController';
 
 const router = express.Router();
 
 // Register
-router.post('/register', registerUser);
+router.post('/register', AuthController.registerUser);
 
 // Login
-router.post('/login', loginUser)
+router.post('/login', AuthController.loginUser)
 
 // New password/ Forgotten Password
-router.post('/forgot-password', forgotPassword); 
-router.post('/reset-password', resetPassword);  
+router.post('/forgot-password', AuthController.forgotPassword); 
+router.post('/reset-password', AuthController.resetPassword);  
 
 // Route for restaurant_owner
 router.get('/restaurant', authenticate, (req, res) => {
