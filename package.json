@@ -12,7 +12,8 @@
     "dev": "ts-node src/server.ts",
     "start": "node dist/server.js",
     "build": "tsc",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "test": "jest"
   },
   "type": "commonjs",
   "dependencies": {
