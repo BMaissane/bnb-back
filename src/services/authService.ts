@@ -4,8 +4,9 @@ import jwt from 'jsonwebtoken';
 
 const prisma = new PrismaClient();
 
-export class AuthService {
-  static async registerUser(email: string, password: string, name: string, isRestaurateur: boolean) {
+export const AuthService = {
+   
+  async registerUser(email: string, password: string, name: string, isRestaurateur: boolean) {
     const hashedPassword = await bcrypt.hash(password, 12);
     const userType = isRestaurateur ? UserType.RESTAURANT_OWNER : UserType.CLIENT;
 

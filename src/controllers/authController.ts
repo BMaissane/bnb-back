@@ -1,4 +1,4 @@
-import { Request, Response } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../prisma/client';
@@ -14,7 +14,9 @@ interface TokenPayload {
   type_user: UserType; 
 }
 
-export const registerUser = async (req: Request, res: Response) => {
+export const AuthController = {
+
+async registerUser(req: Request, res: Response, next: NextFunction) {
   try {
     const { email, password, name, lastName, isRestaurateur } = req.body;
 
@@ -36,13 +38,20 @@ export const registerUser = async (req: Request, res: Response) => {
 
     res.status(201).json(user);
   } catch (error) {
-    console.error('Erreur d\'inscription:', error);
-    res.status(400).json({ error: 'Échec de l\'inscription' });
+    next(error);
   }
-};
+},
 
-export const loginUser = async (req: Request, res: Response) => {
+async loginUser(req: Request, res: Response, next : NextFunction){
   try {
+    // Validation basique
+    if (!req.body?.email || !req.body?.password) {
+      return res.status(400).json({ 
+        code: 'MISSING_CREDENTIALS',
+        message: 'Email et mot de passe requis' 
+      });
+    }
+
     const { email, password } = req.body;
 
     // Debug: Afficher les valeurs reçues
@@ -85,13 +94,13 @@ export const loginUser = async (req: Request, res: Response) => {
     res.json({ token, userId: user.id });
 
   } catch (error) {
-    console.error('Erreur login:', error);
-    res.status(500).json({ message: 'Erreur serveur' });
+   next(error);
   }
-};
+},
+
 
 // Fonction pour "mot de passe oublié"
-export const forgotPassword = async (req: Request, res: Response) => {
+async forgotPassword(req: Request, res: Response){
   const { email } = req.body;
 
   // 1. Vérifier que l'utilisateur existe
@@ -114,10 +123,10 @@ export const forgotPassword = async (req: Request, res: Response) => {
   sendMockEmail(email, `Lien de réinitialisation : ${resetLink}`);
 
   res.json({ message: "Lien de réinitialisation envoyé (vérifiez les logs)" });
-};
+},
 
 // Fonction pour réinitialiser le mot de passe
-export const resetPassword = async (req: Request, res: Response) => {
+async resetPassword(req: Request, res: Response){
   const { token, newPassword } = req.body;
 
   // 1. Vérifier le token
@@ -138,4 +147,6 @@ export const resetPassword = async (req: Request, res: Response) => {
   });
 
   res.json({ message: "Mot de passe réinitialisé avec succès" });
+}
+
 };
