@@ -5,7 +5,8 @@ import jwt from 'jsonwebtoken';
 const prisma = new PrismaClient();
 
 export const AuthService = {
-   async registerUser(email: string, password: string, name: string, isRestaurateur: boolean) {
+   
+  async registerUser(email: string, password: string, name: string, isRestaurateur: boolean) {
     const hashedPassword = await bcrypt.hash(password, 12);
     const userType = isRestaurateur ? UserType.RESTAURANT_OWNER : UserType.CLIENT;
 
@@ -36,5 +37,5 @@ async generateToken(user: { id: number; type_user: UserType }) {
     process.env.JWT_SECRET as string,
     { expiresIn: '24h' }
   );
-},
+}
 }

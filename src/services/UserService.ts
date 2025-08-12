@@ -3,17 +3,17 @@ import { CreateUserDto, UpdateUserDto, UpdateUserSchema } from '../interface/dto
 import { hashPassword } from '../utils/authUtils';
 import { prisma } from '../prisma/client';
 
-export class UserService {
-  static async createUser(dto: CreateUserDto) {
+export const UserService = {
+   async createUser(dto: CreateUserDto) {
     const { password, ...rest } = dto;
     
     return prisma.user.create({
       data: {
         email: rest.email,
         password_hash: await hashPassword(password),
-        first_name: rest.firstName,    // Conversion camelCase → snake_case
+        first_name: rest.firstName,    
         last_name: rest.lastName,
-        phone_number: rest.phoneNumber, // Champ optionnel
+        phone_number: rest.phoneNumber, 
         type_user: rest.type
       },
       select: {
@@ -24,9 +24,9 @@ export class UserService {
         type_user: true
       }
     });
-  }
+  },
 
-static async getUserById(id: number) {
+ async getUserById(id: number) {
   return prisma.user.findUnique({ 
     where: { id },
     select: {
@@ -37,9 +37,9 @@ static async getUserById(id: number) {
       type_user: true,
     }
   });
-}
+},
 
-  static async getUserByEmail(email: string) {
+   async getUserByEmail(email: string) {
     return prisma.user.findUnique({
       where: { email },
       select: {
@@ -49,9 +49,9 @@ static async getUserById(id: number) {
         type_user: true
       }
     });
-  }
+  },
 
-  static async getUserByIdWithPassword(id: number) {
+   async getUserByIdWithPassword(id: number) {
   return prisma.user.findUnique({
     where: { id },
     select: {
@@ -61,9 +61,9 @@ static async getUserById(id: number) {
       // ... autres champs si nécessaire
     }
   });
-}
+},
 
-static async updateUser(id: number, dto: UpdateUserDto) {
+ async updateUser(id: number, dto: UpdateUserDto) {
   return prisma.user.update({
     where: { id },
     data: {
@@ -79,9 +79,9 @@ static async updateUser(id: number, dto: UpdateUserDto) {
       type_user: true
     }
   });
-}
+},
 
-static async deleteUser(id: number) {
+ async deleteUser(id: number) {
   return prisma.user.delete({
     where: { id }
   });
