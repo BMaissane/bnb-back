@@ -11,6 +11,7 @@ export const CreateUserSchema = z.object({
     phoneNumber: z.string().regex(/^\+?[\d\s]+$/).optional().nullable(),
     type: z.nativeEnum(UserType).default('CLIENT')
   });
+  
 
 export const UpdateUserSchema = z.object({
   firstName: z.string().min(2).optional(),

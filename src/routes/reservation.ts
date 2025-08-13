@@ -15,6 +15,7 @@ router.use(authenticate);
 // CRUD des réservations
 router.post(
   '/',
+  authenticate, 
   authorize([UserType.CLIENT]), // Seuls les clients peuvent créer
   validateCreateReservation,
   ReservationController.create

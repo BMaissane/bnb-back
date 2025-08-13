@@ -19,9 +19,9 @@ export const AuthService = {
         type_user: userType
       }
     });
-  }
+  },
 
-  static async loginUser(email: string, password: string) {
+   async loginUser(email: string, password: string) {
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) throw new Error('Utilisateur non trouvé');
 
@@ -29,9 +29,9 @@ export const AuthService = {
     if (!isValid) throw new Error('Mot de passe incorrect');
 
     return user;
-  }
+  },
 
-static generateToken(user: { id: number; type_user: UserType }) {
+ async generateToken(user: { id: number; type_user: UserType }) {
   return jwt.sign(
     { id: user.id, type_user: user.type_user }, 
     process.env.JWT_SECRET as string,
