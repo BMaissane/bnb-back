@@ -3,8 +3,9 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { prisma } from '../prisma/client';
 import { UserType} from '@prisma/client';
-import { generateResetToken, generateToken, hashPassword } from '../utils/authUtils';
+
 import { sendMockEmail } from '../utils/mockEmail'; 
+import { generateResetToken, hashPassword } from '../utils/authUtils';
 
 interface TokenPayload {
   id: number;
