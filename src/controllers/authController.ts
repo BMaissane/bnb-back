@@ -6,6 +6,8 @@ import { UserType} from '@prisma/client';
 
 import { sendMockEmail } from '../utils/mockEmail'; 
 import { generateResetToken, hashPassword } from '../utils/authUtils';
+import { RegisterSchema } from '../interface/dto/userDto';
+import { AuthService } from '../services/authService';
 
 interface TokenPayload {
   id: number;
@@ -43,111 +45,95 @@ async registerUser(req: Request, res: Response, next: NextFunction) {
   }
 },
 
-async loginUser(req: Request, res: Response, next : NextFunction){
-  try {
-    // Validation basique
-    if (!req.body?.email || !req.body?.password) {
-      return res.status(400).json({ 
-        code: 'MISSING_CREDENTIALS',
-        message: 'Email et mot de passe requis' 
+async loginUser(req: Request, res: Response, next: NextFunction) {
+    try {
+      const { user, token } = await AuthService.loginUser(req.body);
+      
+      res.status(200).json({
+        user,
+        token
       });
+    } catch (error) {
+      next(error);
     }
+  },
 
-    const { email, password } = req.body;
 
-    // Debug: Afficher les valeurs reçues
-    console.log('Tentative de login avec:', { email, password });
+// async loginUser(req: Request, res: Response, next : NextFunction){
+//   try {
+//     // Validation basique
+//     if (!req.body?.email || !req.body?.password) {
+//       return res.status(400).json({ 
+//         code: 'MISSING_CREDENTIALS',
+//         message: 'Email et mot de passe requis' 
+//       });
+//     }
 
-    const user = await prisma.user.findUnique({
-      where: { email },
-      select: { 
-        id: true,
-        email: true,
-        password_hash: true,
-        type_user: true 
-      }
-    });
+//     const { email, password } = req.body;
 
-    if (!user) {
-      console.log('Utilisateur non trouvé pour email:', email);
-      return res.status(401).json({ message: 'Identifiants incorrects' });
-    }
+//     // Debug: Afficher les valeurs reçues
+//     console.log('Tentative de login avec:', { email, password });
 
-    // Debug: Comparaison mot de passe
-    const isMatch = await bcrypt.compare(password, user.password_hash);
-    console.log('Résultat comparaison mdp:', isMatch);
+//     const user = await prisma.user.findUnique({
+//       where: { email },
+//       select: { 
+//         id: true,
+//         email: true,
+//         password_hash: true,
+//         type_user: true 
+//       }
+//     });
 
-    if (!isMatch) {
-      return res.status(401).json({ message: 'Identifiants incorrects' });
-    }
+//     if (!user) {
+//       console.log('Utilisateur non trouvé pour email:', email);
+//       return res.status(401).json({ message: 'Identifiants incorrects' });
+//     }
 
-    // Vérification JWT_SECRET
-    if (!process.env.JWT_SECRET) {
-      throw new Error('JWT_SECRET manquant');
-    }
+//     // Debug: Comparaison mot de passe
+//     const isMatch = await bcrypt.compare(password, user.password_hash);
+//     console.log('Résultat comparaison mdp:', isMatch);
 
-    const token = jwt.sign(
-      { id: user.id, type_user: user.type_user },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
-    );
+//     if (!isMatch) {
+//       return res.status(401).json({ message: 'Identifiants incorrects' });
+//     }
 
-    res.json({ token, userId: user.id });
+//     // Vérification JWT_SECRET
+//     if (!process.env.JWT_SECRET) {
+//       throw new Error('JWT_SECRET manquant');
+//     }
 
+//     const token = jwt.sign(
+//       { id: user.id, type_user: user.type_user },
+//       process.env.JWT_SECRET,
+//       { expiresIn: '24h' }
+//     );
+
+//     res.json({ token, userId: user.id });
+
+//   } catch (error) {
+//    next(error);
+//   }
+// },
+
+
+// Fonctions mot de passe oublié + nouveau mot de passe
+async forgotPassword(req: Request, res: Response, next : NextFunction) {
+  try {
+    const token = await AuthService.forgotPassword(req.body.email);
+    console.log(`Lien mock : /reset-password?token=${token}`); // Même log qu'avant
+    res.json({ message: "Regardez les logs pour le lien" });
   } catch (error) {
-   next(error);
+    next(error);
   }
 },
 
-
-// Fonction pour "mot de passe oublié"
-async forgotPassword(req: Request, res: Response){
-  const { email } = req.body;
-
-  // 1. Vérifier que l'utilisateur existe
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user) {
-    return res.status(404).json({ error: "Aucun utilisateur trouvé avec cet email" });
-  }
-
-  // 2. Générer un token temporaire (ex: valable 1h)
-  const resetToken = generateResetToken(user.id); 
-  
-  // 3. Stocker le token en base (ou cache)
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { resetToken }
-  });
-
-  // 4. Envoyer un email (mock en développement)
-  const resetLink = `http://localhost:3000/reset-password?token=${resetToken}`;
-  sendMockEmail(email, `Lien de réinitialisation : ${resetLink}`);
-
-  res.json({ message: "Lien de réinitialisation envoyé (vérifiez les logs)" });
-},
-
-// Fonction pour réinitialiser le mot de passe
-async resetPassword(req: Request, res: Response){
-  const { token, newPassword } = req.body;
-
-  // 1. Vérifier le token
-  const user = await prisma.user.findFirst({ 
-    where: { resetToken: token }
-  });
-  if (!user) {
-    return res.status(400).json({ error: "Token invalide ou expiré" });
-  }
-
-  // 2. Mettre à jour le mot de passe
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { 
-      password_hash: await hashPassword(newPassword),
-      resetToken: null // Invalider le token après usage
+  async resetPassword(req: Request, res: Response, next : NextFunction) {
+    try {
+      const { token, newPassword } = req.body;
+      await AuthService.resetPassword(token, newPassword);
+      res.json({ message: "Mot de passe mis à jour avec succès" });
+    } catch (error) {
+      next(error);
     }
-  });
-
-  res.json({ message: "Mot de passe réinitialisé avec succès" });
+  }
 }
-
-};

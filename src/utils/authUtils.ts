@@ -43,7 +43,7 @@ export const generateToken = (userId: number, type: UserType): string => {
 // JWT Pour la réinitialisation de mot de passe
 export const generateResetToken = (userId: number): string => {
   return jwt.sign(
-    { userId }, // Pas besoin du type ici
+    { userId}, 
     JWT_SECRET, 
     { expiresIn: '1h' } // Durée courte
   );
