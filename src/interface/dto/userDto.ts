@@ -11,8 +11,8 @@ export const phoneNumberSchema = z.string()
   .nullable();
 
 export const RegisterSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
+  email: z.string().email("Format d'email invalide"),
+  password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères"),
   name: z.string().min(2).regex(/^[^<>]*$/),
   lastName: z.string().min(2).regex(/^[^<>]*$/).optional().nullable(),
   isRestaurateur: z.boolean()
