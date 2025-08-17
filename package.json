@@ -16,7 +16,7 @@
     "test": "vitest",
     "test:watch": "vitest watch",
     "test:coverage": "vitest run --coverage",
-    "db:test": "set DATABASE_URL=postgresql://missp:mdp123@localhost:5433/bnb_test?schema=public&& prisma studio"
+    "db:test": "set DATABASE_URL=postgresql://missp:mdp123@localhost:5433/test_db?schema=public&& prisma studio"
   },
   "type": "commonjs",
   "dependencies": {
