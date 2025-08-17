@@ -63,23 +63,18 @@ async loginUser(loginData: LoginDto): Promise<{ user: PublicUser; token: string 
     const user = await prisma.user.findUnique({ where: { email } });
     if (!user) throw new Error("Email non trouvé");
 
-    // Utilisez directement generateResetToken depuis authUtils
+    // appel a authUtils
     const resetToken = generateResetToken(user.id);
 
-    // Stockez le token brut (car JWT gère déjà l'expiration)
     await prisma.user.update({
       where: { id: user.id },
       data: { resetToken }
     });
 
-    return resetToken; // Envoyez ce token par email
+    return resetToken; 
   },
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
-    // 1. Vérifiez le token via jwt.verify() (déjà expiré si nécessaire)
-    // (À implémenter si absent de authUtils)
-    
-    // 2. Trouvez l'utilisateur
     const user = await prisma.user.findFirst({
       where: { resetToken: token }
     });

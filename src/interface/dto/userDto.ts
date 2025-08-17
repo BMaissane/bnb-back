@@ -6,7 +6,7 @@ export const phoneNumberSchema = z.string()
   .regex(/^(?:(?:\+|00)33|0)\s*[1-9](?:[\s.-]*\d{2}){4}$/, {
     message: "Numéro de téléphone français invalide"
   })
-  .transform(val => val.replace(/[\s.-]/g, '')) // Normalise en supprimant espaces/points/tirets
+  .transform(val => val.replace(/[\s.-]/g, '')) 
   .optional()
   .nullable();
 

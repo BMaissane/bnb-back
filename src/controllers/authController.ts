@@ -120,7 +120,7 @@ async loginUser(req: Request, res: Response, next: NextFunction) {
 async forgotPassword(req: Request, res: Response, next : NextFunction) {
   try {
     const token = await AuthService.forgotPassword(req.body.email);
-    console.log(`Lien mock : /reset-password?token=${token}`); // Même log qu'avant
+    console.log(`Lien mock : /reset-password?token=${token}`); 
     res.json({ message: "Regardez les logs pour le lien" });
   } catch (error) {
     next(error);
