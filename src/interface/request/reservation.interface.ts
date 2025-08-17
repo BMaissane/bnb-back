@@ -5,6 +5,7 @@ export interface ReservationDetails {
   id: number;
   status: ReservationStatus;
   specialRequests?: string;
+  capacity: number;
   timeslot: {
     startAt: Date;
     endAt: Date;

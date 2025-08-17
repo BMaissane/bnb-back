@@ -51,7 +51,6 @@ function prepareDateTimeUpdates(
 export const TimeslotService = {
 
   // POST /timeslots
-// Dans TimeslotService.createTimeslot
 async createTimeslot(restaurantId: number, userId: number, data: {
   date: string | Date;
   start_at: string;

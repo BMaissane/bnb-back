@@ -10,6 +10,7 @@ const mapToDetails = (reservation: {
   id: number;
   status: ReservationStatus;
   special_requests?: string | null;
+  capacity: number;
   timeslot: {
     start_at: Date;
     end_at: Date;
@@ -27,6 +28,7 @@ const mapToDetails = (reservation: {
     id: reservation.id,
     status: reservation.status,
     specialRequests: reservation.special_requests || undefined,
+    capacity: reservation.capacity,
     timeslot: {
       startAt: reservation.timeslot.start_at,
       endAt: reservation.timeslot.end_at
@@ -75,6 +77,7 @@ export const ReservationService = {
           restaurant_id: data.restaurantId,
           timeslot_id: data.timeslotId,
           special_requests: data.specialRequests,
+          capacity: data.capacity,
           reservation_has_item: {
             createMany: {
               data: data.items.map(item => ({
@@ -189,6 +192,7 @@ async getAllRestaurantReservations(restaurantId: number): Promise<ReservationDet
     id: reservation.id,
     status: reservation.status,
     specialRequests: reservation.special_requests || undefined,
+    capacity: reservation.capacity,
     timeslot: {
       startAt: reservation.timeslot.start_at,
       endAt: reservation.timeslot.end_at
@@ -263,6 +267,7 @@ async update(
       id: updated.id,
       status: updated.status,
       specialRequests: updated.special_requests || undefined,
+      capacity: updated.capacity,
       timeslot: {
         startAt: updated.timeslot.start_at,
         endAt: updated.timeslot.end_at
