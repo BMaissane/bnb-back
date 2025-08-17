@@ -18,7 +18,15 @@ restaurantRouter.post(
   RestaurantController.create
 );
 restaurantRouter.get('/owner/:ownerId', authenticate, RestaurantController.getRestaurantsByOwner);
-restaurantRouter.patch('/:id', authenticate, authorize(['RESTAURANT_OWNER']), checkOwnership('restaurant'), RestaurantController.update);
-restaurantRouter.delete('/:id', authenticate, authorize(['RESTAURANT_OWNER']), checkOwnership('restaurant'), RestaurantController.delete);
+restaurantRouter.patch('/:id', 
+  authenticate, 
+  authorize(['RESTAURANT_OWNER']), 
+  checkOwnership('restaurant'),
+   RestaurantController.update);
+restaurantRouter.delete('/:id',
+   authenticate, 
+   authorize(['RESTAURANT_OWNER']), 
+   checkOwnership('restaurant'), 
+   RestaurantController.delete);
 
 export default restaurantRouter;

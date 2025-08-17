@@ -17,8 +17,8 @@ import restaurantRouter from './routes/restaurant';
 
 
 const app = express();
-// const port = process.env.PORT || 3600;
-const port = process.env.NODE_ENV === 'test' ? 0 : 5000; 
+ const port = process.env.PORT || 3600;
+//const port = process.env.NODE_ENV === 'test' ? 0 : 5000; 
 app.use(express.json());
 
 // 1. Middlewares de sécurité
@@ -68,17 +68,17 @@ app.get('/api/auth', (req, res) => {
   res.status(200).json({ status: 'OK' });
 });
 
-if (process.env.NODE_ENV !== 'test') {
-  app.listen(port, () => {
-    console.log(`Server running on port ${port}`);
-  });
-}
+// if (process.env.NODE_ENV !== 'test') {
+//   app.listen(port, () => {
+//     console.log(`Server running on port ${port}`);
+//   });
+// }
 
 // 7. Gestion des erreurs
 app.use(errorHandler);
 
 app.listen(port, () => {
-  console.log(`Server running on port ${port}`); // Template literal corrigé
+  console.log(`Server running on port ${port}`); 
 });
 
 export default app;
