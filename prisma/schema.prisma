@@ -8,41 +8,15 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// Enums for status & different types of values expected by the database
-enum ItemCategory {
-  STARTER
-  MAIN
-  DESSERT
-  SIDE
-  DRINK
-}
-
-enum UserType {
-  CLIENT
-  RESTAURANT_OWNER
-}
-
-enum TimeslotStatus {
-  AVAILABLE
-  BOOKED
-  UNAVAILABLE
-}
-
-enum ReservationStatus {
-  CONFIRMED
-  CANCELED
-}
-
-// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model item {
   id                   Int                    @id @default(autoincrement())
   name                 String                 @db.VarChar(100)
   description          String?
-  category             ItemCategory // Type :  STARTER, MAIN, DESSERT, SIDE, DRINK
+  category             ItemCategory
   base_price           Decimal                @db.Decimal(10, 2)
+  menu_has_item        menu_has_item[]
   reservation_has_item reservation_has_item[]
   restaurant_has_item  restaurant_has_item[]
-  menu_has_item        menu_has_item[]
 }
 
 model menu {
@@ -57,12 +31,11 @@ model menu {
   menu_has_item menu_has_item[]
 }
 
-// Table de liaison pour lié un/des items à un menu
 model menu_has_item {
   menu_id Int
   item_id Int
-  menu    menu @relation(fields: [menu_id], references: [id])
   item    item @relation(fields: [item_id], references: [id])
+  menu    menu @relation(fields: [menu_id], references: [id])
 
   @@id([menu_id, item_id])
   @@index([item_id])
@@ -89,10 +62,11 @@ model reservation {
   user_id              Int
   restaurant_id        Int
   timeslot_id          Int
-  status               ReservationStatus      @default(CONFIRMED) // Value: "CONFIRMED" or "CANCELED"
+  status               ReservationStatus      @default(CONFIRMED)
   special_requests     String?
   created_at           DateTime?              @default(now()) @db.Timestamptz(6)
   updated_at           DateTime?              @default(now()) @db.Timestamptz(6)
+  capacity             Int
   message              message[]
   restaurant           restaurant             @relation(fields: [restaurant_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
   timeslot             timeslot               @relation(fields: [timeslot_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
@@ -100,7 +74,6 @@ model reservation {
   reservation_has_item reservation_has_item[]
 }
 
-// Table pour lister les item attachés à un reservationId
 model reservation_has_item {
   reservation_id Int
   item_id        Int
@@ -113,31 +86,28 @@ model reservation_has_item {
 }
 
 model restaurant {
-  id            Int       @id @unique @default(autoincrement())
-  owner_id      Int
-  name          String    @db.VarChar(100)
-  address       String?   @db.VarChar(255)
-  opening_hours Json?     // Stockage flexible des horaires en JSON
-  genre         String?   @db.VarChar(50)
-  siret         String    @unique @db.VarChar(14)
-  description   String?   @db.VarChar(255)
-  image_url     String    @default("https://example.com/placeholder.jpg") @db.VarChar(255)
-  is_active     Boolean?  @default(true)
-  created_at    DateTime? @default(now()) @db.Timestamptz(6)
-  updated_at    DateTime? @default(now()) @db.Timestamptz(6)
-
-  // Relations
+  id                  Int                   @id @unique @default(autoincrement())
+  owner_id            Int
+  name                String                @db.VarChar(100)
+  address             String?               @db.VarChar(255)
+  genre               String?               @db.VarChar(50)
+  siret               String                @unique @db.VarChar(14)
+  description         String?               @db.VarChar(255)
+  image_url           String                @default("https://example.com/placeholder.jpg") @db.VarChar(255)
+  is_active           Boolean?              @default(true)
+  created_at          DateTime?             @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime?             @default(now()) @db.Timestamptz(6)
+  opening_hours       Json?
   menu                menu[]
   message             message[]
   reservation         reservation[]
+  owner               user                  @relation("owner_restaurant", fields: [owner_id], references: [id])
   restaurant_has_item restaurant_has_item[]
   timeslot            timeslot[]
-  owner               user                  @relation("owner_restaurant", fields: [owner_id], references: [id])
 
   @@index([owner_id], map: "idx_restaurant_owner")
 }
 
-// Table pour le cas où un item est proposé par plusieurs restaurants (qui gérent leur prix et stock directement/manuellement)
 model restaurant_has_item {
   restaurant_id Int
   item_id       Int
@@ -155,27 +125,24 @@ model timeslot {
   id            Int            @id @default(autoincrement())
   restaurant_id Int
   date          DateTime       @db.Date
-  start_at      DateTime       
-  end_at        DateTime       
+  start_at      DateTime
+  end_at        DateTime
   capacity      Int
-  status        TimeslotStatus // (AVAILABLE, BOOKED, UNAVAILABLE)
+  status        TimeslotStatus
   created_at    DateTime?      @default(now()) @db.Timestamptz(6)
   updated_at    DateTime?      @default(now()) @db.Timestamptz(6)
   reservation   reservation[]
   restaurant    restaurant     @relation(fields: [restaurant_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  // Contrainte de validation de date via index
-   @@index([date, start_at])
+  @@index([date, start_at])
   @@index([restaurant_id])
-
-    // Contrainte pour empêcher les dates passées
   @@map("timeslots")
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
 model user {
   id            Int           @id @default(autoincrement())
-  type_user     UserType // Type: CLIENT or RESTAURANT_OWNER
+  type_user     UserType
   first_name    String        @db.VarChar(100)
   last_name     String?       @db.VarChar(50)
   email         String        @unique @db.VarChar(255)
@@ -187,4 +154,28 @@ model user {
   message       message[]
   reservation   reservation[]
   restaurants   restaurant[]  @relation("owner_restaurant")
+}
+
+enum ItemCategory {
+  STARTER
+  MAIN
+  DESSERT
+  SIDE
+  DRINK
+}
+
+enum UserType {
+  CLIENT
+  RESTAURANT_OWNER
+}
+
+enum TimeslotStatus {
+  AVAILABLE
+  BOOKED
+  UNAVAILABLE
+}
+
+enum ReservationStatus {
+  CONFIRMED
+  CANCELED
 }
