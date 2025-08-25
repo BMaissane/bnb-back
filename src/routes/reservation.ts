@@ -45,6 +45,7 @@ router.get('/restaurants/:id',
 // Mettre à jour une réservation (statut OU informations)
 router.patch(
   '/:id',
+  authenticate,
   authorize(['CLIENT']),
   checkOwnership('reservation'), 
   ReservationController.update
@@ -53,6 +54,7 @@ router.patch(
 // Annuler une réservation (version alternative)
 router.patch(
   '/:id/cancel',
+  authenticate,
   authorize(['CLIENT', 'RESTAURANT_OWNER']),
   checkOwnership('reservation'), 
   ReservationController.cancel

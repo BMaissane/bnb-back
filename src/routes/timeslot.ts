@@ -22,6 +22,7 @@ router.get('/', (req, res, next) => {
 
 // 3. Toutes les autres routes avec paramètres
 router.get('/:id', TimeslotController.getById);
+
 router.patch('/:id', 
   authenticate,
   authorize(['RESTAURANT_OWNER']),

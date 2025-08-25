@@ -6,6 +6,7 @@ export const createReservationSchema = z.object({
   restaurantId: z.number().int().positive(),
   timeslotId: z.number().int().positive(),
   specialRequests: z.string().max(500).optional(),
+  capacity: z.number().int().positive().min(1),
   items: z.array(
     z.object({
       itemId: z.number().int().positive(),

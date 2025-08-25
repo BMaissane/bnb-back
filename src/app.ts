@@ -24,10 +24,10 @@ app.use(express.json());
 app.use(helmet());
 app.use(corsMiddleware);
 
-// 2. Body parsing (version simplifiée)
+// 2. Body parsing 
 app.use(express.urlencoded({ extended: true }));
 
-// 3. Logging des requêtes (version corrigée)
+// 3. Logging des requêtes 
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.path}`);
   console.log('Params:', req.params);
@@ -35,7 +35,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// 4. Prisma middleware (version corrigée)
+// 4. Prisma middleware 
 app.use((req, res, next) => {
   res.on('finish', () => {
     prisma.$disconnect().catch(console.error);
@@ -43,10 +43,10 @@ app.use((req, res, next) => {
   next();
 });
 
-// 5. Routes (version corrigée)
+// 5. Routes 
 const restaurantParentRouter = express.Router({ mergeParams: true });
-app.use('/api/restaurants/:restaurantId', restaurantParentRouter); // :restaurantId dynamique
-restaurantParentRouter.use('/timeslots', timeslotRouter); // Route imbriquée
+app.use('/api/restaurants/:restaurantId', restaurantParentRouter); 
+restaurantParentRouter.use('/timeslots', timeslotRouter);
 
 app.use('/api/restaurants', restaurantRouter); 
 app.use('/api/auth', authRouter);
